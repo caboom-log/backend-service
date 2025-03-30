@@ -1,0 +1,16 @@
+spring:
+  application:
+    name: backend-service
+  profiles:
+    active: prod
+
+server:
+  port: 9003
+  shutdown: graceful
+
+eureka:
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+    service-url:
+      defaultZone:
