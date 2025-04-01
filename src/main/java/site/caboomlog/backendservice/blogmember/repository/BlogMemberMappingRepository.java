@@ -5,5 +5,10 @@ import site.caboomlog.backendservice.blogmember.BlogMemberMapping;
 
 public interface BlogMemberMappingRepository extends JpaRepository<BlogMemberMapping, Long> {
     BlogMemberMapping findByMember_MbNoAndBlog_BlogMain(Long mbNo, boolean isMain);
+
     boolean existsByMember_MbNoAndBlog_BlogFid(Long mbNo, String blogFid);
+
+    int countByMember_MbNo(Long mbNo);
+
+    boolean existsByMember_MbNoAndBlogBlogMain(Long mbNo, boolean isMain);
 }

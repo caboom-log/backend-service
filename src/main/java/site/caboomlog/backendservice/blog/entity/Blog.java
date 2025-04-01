@@ -46,6 +46,10 @@ public class Blog {
     @Column(name = "blog_main_img")
     private String blogMainImg;
 
+    @Column(name = "blog_type")
+    @Convert(converter = BlogTypeConverter.class)
+    private BlogType blogType;
+
     private Blog(Long blogId, String blogFid, Boolean blogMain, String blogName,
                  String blogDescription, Boolean blogPublic, LocalDateTime createdAt, LocalDateTime updatedAt) {
         this.blogId = blogId;
@@ -58,13 +62,34 @@ public class Blog {
         this.updatedAt = updatedAt;
     }
 
-    public static Blog ofNewBlog(String blogFid, Boolean blogMain, String blogName, String blogDescription) {
-        return new Blog(null, blogFid, blogMain, blogName, blogDescription, true, null, null);
+    public static Blog ofNewBlog(String blogFid, Boolean blogMain, String blogName, String blogDescription, boolean blogPublic) {
+        return new Blog(null, blogFid, blogMain, blogName, blogDescription, blogPublic, null, null);
     }
 
     public static Blog ofExistingBlog(Long blogId, String blogFid, Boolean blogMain, String blogName,
                                       String blogDescription) {
         return new Blog(blogId, blogFid, blogMain, blogName, blogDescription,
                 true, null, null);
+    }
+
+    public void setBlogPublic() {
+        this.blogPublic = true;
+    }
+
+    public void setBlogPrivate() {
+        this.blogPublic = false;
+    }
+
+    public void setBlogMain() {
+        this.blogMain = true;
+    }
+
+    private void setBlogNotMain() {
+        this.blogMain = false;
+    }
+
+    public static void changeMainBlog(Blog oldMain, Blog newMain) {
+        oldMain.setBlogNotMain();
+        newMain.setBlogMain();
     }
 }

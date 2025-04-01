@@ -2,9 +2,12 @@ package site.caboomlog.backendservice.blog.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import site.caboomlog.backendservice.blog.dto.BlogInfoResponse;
+import site.caboomlog.backendservice.blog.dto.CreateBlogRequest;
 import site.caboomlog.backendservice.blog.service.BlogService;
+import site.caboomlog.backendservice.common.exception.BadRequestException;
 
 @RestController
 @RequestMapping("/api/blogs")
@@ -25,6 +28,20 @@ public class BlogController {
     public ResponseEntity<BlogInfoResponse> getBlogInfo(@PathVariable("blogFid") String blogFid) {
         BlogInfoResponse blogInfoResponse = blogService.getBlogInfo(blogFid);
         return ResponseEntity.ok(blogInfoResponse);
+    }
+
+    @PostMapping
+    public ResponseEntity<String> createBlog(@RequestHeader("caboomlog-mb-no") Long mbNo,
+                                           CreateBlogRequest request,
+                                           BindingResult bindingResult) {
+        if (bindingResult.hasErrors()) {
+            StringBuilder builder = new StringBuilder();
+            bindingResult.getAllErrors().stream()
+                    .forEach(errMsg -> builder.append(errMsg).append("\n"));
+            throw new BadRequestException(builder.toString());
+        }
+        blogService.createBlog(request, mbNo);
+        return ResponseEntity.status(201).build();
     }
 
 }
