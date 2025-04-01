@@ -30,7 +30,7 @@ public class Blog {
     @Column(name = "blog_name")
     private String blogName;
 
-    @Column(name = "blog_description", columnDefinition = "text")
+    @Column(name = "blog_description")
     private String blogDescription;
 
     @Column(name = "blog_public", columnDefinition = "tinyint")
@@ -42,6 +42,9 @@ public class Blog {
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    @Column(name = "blog_main_img")
+    private String blogMainImg;
 
     private Blog(Long blogId, String blogFid, Boolean blogMain, String blogName,
                  String blogDescription, Boolean blogPublic, LocalDateTime createdAt, LocalDateTime updatedAt) {
