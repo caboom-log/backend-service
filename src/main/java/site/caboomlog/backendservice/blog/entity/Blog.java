@@ -72,14 +72,6 @@ public class Blog {
                 true, null, null);
     }
 
-    public void setBlogPublic() {
-        this.blogPublic = true;
-    }
-
-    public void setBlogPrivate() {
-        this.blogPublic = false;
-    }
-
     public void setBlogMain() {
         this.blogMain = true;
     }
@@ -91,5 +83,11 @@ public class Blog {
     public static void changeMainBlog(Blog oldMain, Blog newMain) {
         oldMain.setBlogNotMain();
         newMain.setBlogMain();
+    }
+
+    public void modifyBlogInfo(String blogName, String blogDescription, boolean blogPublic) {
+        this.blogName = blogName;
+        this.blogDescription = blogDescription;
+        this.blogPublic = blogPublic;
     }
 }
