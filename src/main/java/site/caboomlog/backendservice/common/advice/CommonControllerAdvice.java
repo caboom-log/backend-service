@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import site.caboomlog.backendservice.common.dto.ErrorResponse;
 import site.caboomlog.backendservice.common.exception.BadRequestException;
+import site.caboomlog.backendservice.common.exception.DatabaseException;
 import site.caboomlog.backendservice.member.exception.MemberNotFoundException;
 import site.caboomlog.backendservice.role.exception.RoleNotFoundException;
 
@@ -39,5 +40,12 @@ public class CommonControllerAdvice {
         log.info("handleMemberNotFoundException - ", e);
         return ResponseEntity.status(404)
                 .body(new ErrorResponse(404, e.getMessage()));
+    }
+
+    @ExceptionHandler(DatabaseException.class)
+    public ResponseEntity<ErrorResponse> handleDatabaseExfeption(DatabaseException e) {
+        log.warn("handleException - ", e);
+        return ResponseEntity.status(500)
+                .body(new ErrorResponse(500, "Error occured. Check server log"));
     }
 }
