@@ -1,4 +1,4 @@
-package site.caboomlog.backendservice.common.notification;
+package site.caboomlog.backendservice.common.notification.event;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

@@ -26,7 +26,7 @@ public class Notification {
 
     @JoinColumn(name = "notification_type_id")
     @ManyToOne(fetch = FetchType.LAZY)
-    private Object notificationType;
+    private NotificationType notificationType;
 
     @Column(name = "reference_id")
     private Long referenceId;
@@ -41,7 +41,7 @@ public class Notification {
     @CreationTimestamp
     private LocalDateTime createdAt;
 
-    private Notification(Long notificationId, Member receiverMbNo, Object notificationType, Long referenceId,
+    private Notification(Long notificationId, Member receiverMbNo, NotificationType notificationType, Long referenceId,
                          boolean read, String message, LocalDateTime createdAt) {
         this.notificationId = notificationId;
         this.receiverMbNo = receiverMbNo;
@@ -52,7 +52,7 @@ public class Notification {
         this.createdAt = createdAt;
     }
 
-    public static Notification ofNewNotification(Member receiverMbNo, Object notificationType,
+    public static Notification ofNewNotification(Member receiverMbNo, NotificationType notificationType,
                                                  Long referenceId, String message) {
         return new Notification(null, receiverMbNo, notificationType, referenceId,
                 false, message, null);

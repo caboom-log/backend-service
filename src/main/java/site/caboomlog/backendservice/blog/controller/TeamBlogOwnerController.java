@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import site.caboomlog.backendservice.blog.dto.InviteMemberRequest;
+import site.caboomlog.backendservice.blog.dto.TeamBlogMembersResponse;
 import site.caboomlog.backendservice.blog.service.TeamBlogOwnerService;
 
 @RestController
@@ -37,4 +38,55 @@ public class TeamBlogOwnerController {
         teamBlogOwnerService.inviteMember(ownerMbNo, request.getMbNo(), blogFid);
         return ResponseEntity.ok().build();
     }
+
+    /**
+     * 팀 블로그의 멤버 목록을 조회합니다.
+     *
+     * <p>해당 블로그의 소유자만 요청 가능하며, ROLE_MEMBER 권한을 가진 사용자 목록을 반환합니다.</p>
+     *
+     * @param blogFid 블로그 식별자
+     * @param ownerMbNo 블로그 소유자의 회원 번호 (헤더 caboomlog-mb-no)
+     * @return 멤버 목록 응답
+     */
+    @GetMapping("/{blogFid}/members")
+    public ResponseEntity<TeamBlogMembersResponse> getMembers(@PathVariable("blogFid") String blogFid,
+                                                                      @RequestHeader("caboomlog-mb-no") Long ownerMbNo) {
+        TeamBlogMembersResponse response = teamBlogOwnerService.getMembers(blogFid, ownerMbNo);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * 특정 팀 블로그 멤버를 추방합니다.
+     *
+     * <p>블로그 소유자만 요청 가능하며, 추방된 멤버에게 알림이 전송됩니다.</p>
+     *
+     * @param blogFid 블로그 식별자
+     * @param ownerMbNo 블로그 소유자의 회원 번호
+     * @param mbNo 추방할 대상자의 회원 번호
+     * @return 204 No Content 응답
+     */
+    @DeleteMapping("/{blogFid}/members/{mbNo}")
+    public ResponseEntity<String> kickMember(@PathVariable("blogFid") String blogFid,
+                                             @RequestHeader("caboomlog-mb-no") Long ownerMbNo,
+                                             @PathVariable("mbNo") Long mbNo) {
+        teamBlogOwnerService.kickMember(blogFid, ownerMbNo, mbNo);
+        return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * 해당 블로그에 속한 모든 멤버를 일괄 추방합니다.
+     *
+     * <p>ROLE_MEMBER 권한을 가진 모든 멤버에 대해 추방 처리를 수행하며, 각 멤버는 개별 트랜잭션으로 처리됩니다.</p>
+     *
+     * @param blogFid 블로그 식별자
+     * @param ownerMbNo 블로그 소유자의 회원 번호
+     * @return 204 No Content 응답
+     */
+    @DeleteMapping("/{blogFid}/members")
+    public ResponseEntity<String> kickAllMembers(@PathVariable("blogFid") String blogFid,
+                                                 @RequestHeader("caboomlog-mb-no") Long ownerMbNo) {
+        teamBlogOwnerService.kickAllMembers(blogFid, ownerMbNo);
+        return ResponseEntity.noContent().build();
+    }
+
 }
