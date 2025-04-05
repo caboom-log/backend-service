@@ -123,6 +123,24 @@ public class TeamBlogOwnerService {
     }
 
     /**
+     * 팀 블로그의 소유자를 지정된 멤버로 변경합니다.
+     *
+     * <p>현재 소유자와 새 소유자 둘 다 블로그 멤버여야 하며,
+     * 내부적으로 두 멤버의 역할(Role)을 서로 교환합니다.</p>
+     *
+     * @param blogFid 블로그 식별자
+     * @param ownerMbNo 현재 소유자의 회원 번호
+     * @param newOwnerMbNo 새로운 소유자의 회원 번호
+     * @throws BadRequestException 유효하지 않은 권한이거나 팀 블로그가 아닐 경우
+     */
+    @Transactional
+    public void transferOwnership(String blogFid, Long ownerMbNo, Long newOwnerMbNo) {
+        BlogMemberMapping ownerMapping = blogMemberMappingRepository.findByMember_MbNoAndBlog_BlogFid(ownerMbNo, blogFid);
+        BlogMemberMapping newOwnerMapping = blogMemberMappingRepository.findByMember_MbNoAndBlog_BlogFid(newOwnerMbNo, blogFid);
+        BlogMemberMapping.transferOwnership(ownerMapping, newOwnerMapping);
+    }
+
+    /**
      * 주어진 회원 번호와 블로그 FID를 기반으로, 해당 블로그가 요청자의 소유이고 팀 블로그인지 검증합니다.
      *
      * @param ownerMbNo 블로그 소유자 회원 번호

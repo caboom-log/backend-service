@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import site.caboomlog.backendservice.blog.dto.ChangeTeamBlogOwnerRequest;
 import site.caboomlog.backendservice.blog.dto.InviteMemberRequest;
 import site.caboomlog.backendservice.blog.dto.TeamBlogMembersResponse;
 import site.caboomlog.backendservice.blog.service.TeamBlogOwnerService;
@@ -33,7 +34,7 @@ public class TeamBlogOwnerController {
                                                @RequestBody InviteMemberRequest request) {
         if (request.getMbNo() == null || request.getMbNo() <= 0) {
             log.info(String.format("mbNo는 null이거나 0 이하일 수 없음. mbNo: ", request.getMbNo()));
-            ResponseEntity.badRequest().body("유효하지 않은 mbNo입니다.");
+            return ResponseEntity.badRequest().body("유효하지 않은 mbNo입니다.");
         }
         teamBlogOwnerService.inviteMember(ownerMbNo, request.getMbNo(), blogFid);
         return ResponseEntity.ok().build();
@@ -89,4 +90,26 @@ public class TeamBlogOwnerController {
         return ResponseEntity.noContent().build();
     }
 
+    /**
+     * 팀 블로그의 소유자를 다른 멤버에게 위임합니다.
+     *
+     * <p>기존 소유자만 요청할 수 있으며, 대상 멤버는 해당 블로그의 ROLE_MEMBER 또는 ROLE_COACH 권한을 가진 사용자여야 합니다.</p>
+     *
+     * @param blogFid 블로그 식별자
+     * @param ownerMbNo 현재 소유자의 회원 번호 (헤더에서 전달됨)
+     * @param request 새로운 소유자의 회원 번호가 포함된 요청 본문
+     * @return 200 OK 응답
+     */
+    @PutMapping("/{blogFid}/transfer-ownership")
+    public ResponseEntity<String> transferOwnership(@PathVariable("blogFid") String blogFid,
+                                                    @RequestHeader("caboomlog-mb-no") Long ownerMbNo,
+                                                    @RequestBody ChangeTeamBlogOwnerRequest request) {
+        Long newOwnerMbNo  = request.getMbNo();
+        if (newOwnerMbNo == null || newOwnerMbNo <= 0) {
+            log.info(String.format("mbNo는 null이거나 0 이하일 수 없음. mbNo: ", newOwnerMbNo));
+            return ResponseEntity.badRequest().body("유효하지 않은 mbNo입니다.");
+        }
+        teamBlogOwnerService.transferOwnership(blogFid, ownerMbNo, newOwnerMbNo);
+        return ResponseEntity.ok().build();
+    }
 }
