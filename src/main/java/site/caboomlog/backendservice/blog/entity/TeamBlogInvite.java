@@ -36,10 +36,10 @@ public class TeamBlogInvite {
     private LocalDateTime invitedAt;
 
     @Column(name = "responded_at")
-    private Long respondedAt;
+    private LocalDateTime respondedAt;
 
     public TeamBlogInvite(Long teamBlogInviteId, Blog blog, Member member, TeamBlogInviteStatus status,
-                          LocalDateTime invitedAt, Long respondedAt) {
+                          LocalDateTime invitedAt, LocalDateTime respondedAt) {
         this.teamBlogInviteId = teamBlogInviteId;
         this.blog = blog;
         this.member = member;
@@ -50,5 +50,10 @@ public class TeamBlogInvite {
 
     public static TeamBlogInvite ofNewTeamBlogInvite(Blog blog, Member member) {
         return new TeamBlogInvite(null, blog, member, TeamBlogInviteStatus.PENDING, null, null);
+    }
+
+    public void acceptInvitation() {
+        this.respondedAt = LocalDateTime.now();
+        this.status = TeamBlogInviteStatus.ACCEPTED;
     }
 }

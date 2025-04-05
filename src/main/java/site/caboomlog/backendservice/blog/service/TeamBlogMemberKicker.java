@@ -44,7 +44,7 @@ public class TeamBlogMemberKicker {
                 owner,
                 blogMemberMapping.getMember(),
                 blog));
-        Role kicked = roleRepository.findByRoleId("MEMBER");
+        Role kicked = roleRepository.findByRoleId("ROLE_KICKED");
         if (blogMemberMapping.getRole().equals(kicked)) {
             throw new BadRequestException("추방할 수 없거나 이미 추방된 회원입니다.");
         }

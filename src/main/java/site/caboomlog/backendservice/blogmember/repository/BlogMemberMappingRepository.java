@@ -17,4 +17,6 @@ public interface BlogMemberMappingRepository extends JpaRepository<BlogMemberMap
     boolean existsByMember_MbNoAndBlogBlogMain(Long mbNo, boolean isMain);
 
     List<BlogMemberMapping> findAllByBlog_BlogFidAndRole_RoleId(String blogFid, String roleId);
+
+    boolean existsByBlog_BlogFidAndMbNickname(String blogFid, String mbNickname);
 }
