@@ -5,4 +5,6 @@ import site.caboomlog.backendservice.member.entity.Member;
 
 public interface MemberRepository extends JpaRepository<Member, Long> {
     boolean existsByMbNo(Long mbNo);
+
+    Member findByMbUuid(String mbUuid);
 }

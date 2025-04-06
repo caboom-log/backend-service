@@ -86,8 +86,14 @@ public class Blog {
     }
 
     public void modifyBlogInfo(String blogName, String blogDescription, boolean blogPublic) {
-        this.blogName = blogName;
-        this.blogDescription = blogDescription;
-        this.blogPublic = blogPublic;
+        if (blogName != null) {
+            this.blogName = blogName;
+        }
+        if (blogDescription != null) {
+            this.blogDescription = blogDescription;
+        }
+        if (blogPublic != this.blogPublic) {
+            this.blogPublic = blogPublic;
+        }
     }
 }
