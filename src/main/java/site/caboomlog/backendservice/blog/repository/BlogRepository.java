@@ -5,7 +5,9 @@ import site.caboomlog.backendservice.blog.entity.Blog;
 
 import java.util.Optional;
 
-public interface BlogRepository extends JpaRepository<Blog, String> {
+public interface BlogRepository extends JpaRepository<Blog, Long> {
 
     Optional<Blog> findByBlogFid(String blogFid);
+
+    boolean existsByBlogFid(String blogFid);
 }

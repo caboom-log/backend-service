@@ -7,6 +7,7 @@ import site.caboomlog.backendservice.blog.dto.BlogInfoResponse;
 import site.caboomlog.backendservice.blog.dto.CreateBlogRequest;
 import site.caboomlog.backendservice.blog.dto.ModifyBlogInfoRequest;
 import site.caboomlog.backendservice.blog.entity.Blog;
+import site.caboomlog.backendservice.blog.entity.BlogType;
 import site.caboomlog.backendservice.blog.exception.BlogFidDuplicatedException;
 import site.caboomlog.backendservice.blog.exception.BlogNotFoundException;
 import site.caboomlog.backendservice.blog.exception.InvalidBlogCountRangeException;
@@ -14,6 +15,7 @@ import site.caboomlog.backendservice.blog.repository.BlogRepository;
 import site.caboomlog.backendservice.blogmember.BlogMemberMapping;
 import site.caboomlog.backendservice.blogmember.repository.BlogMemberMappingRepository;
 import site.caboomlog.backendservice.common.exception.BadRequestException;
+import site.caboomlog.backendservice.common.exception.UnAuthenticatedException;
 import site.caboomlog.backendservice.member.entity.Member;
 import site.caboomlog.backendservice.member.exception.MemberNotFoundException;
 import site.caboomlog.backendservice.member.repository.MemberRepository;
@@ -42,7 +44,7 @@ public class BlogService {
     public BlogInfoResponse getBlogInfo(String blogFid) {
         Optional<Blog> optionalBlog = blogRepository.findByBlogFid(blogFid);
         if (optionalBlog.isEmpty()) {
-            throw new BlogNotFoundException(blogFid + " not found");
+            throw new BlogNotFoundException("존재하지 않는 블로그입니다.");
         }
         return new BlogInfoResponse(
                 optionalBlog.get().getBlogName(),
@@ -68,7 +70,7 @@ public class BlogService {
     public void createBlog(CreateBlogRequest request, Long mbNo) {
         Optional<Member> optionalMember = memberRepository.findById(mbNo);
         if (optionalMember.isEmpty()) {
-            throw new MemberNotFoundException(String.format("존재하지 않는 mbNo 입니다: %d", mbNo));
+            throw new MemberNotFoundException(String.format("존재하지 않는 사용자입니다."));
         }
         Optional<Role> optionalRole = roleRepository.findById("ROLE_OWNER");
         if (optionalRole.isEmpty()) {
@@ -83,7 +85,8 @@ public class BlogService {
                 false,
                 request.getBlogName(),
                 request.getBlogDesc(),
-                request.isBlogPublic()
+                request.isBlogPublic(),
+                BlogType.valueOf(request.getBlogType().toUpperCase())
         );
         if(!hasMainBlog(mbNo)) {
             newBlog.setBlogMain();
@@ -167,7 +170,7 @@ public class BlogService {
         BlogMemberMapping newBlogMapping = blogMemberMappingRepository
                 .findByMember_MbNoAndBlog_BlogFid(mbNo, blogFid);
         if (newBlogMapping == null || !newBlogMapping.getRole().getRoleId().equalsIgnoreCase("ROLE_OWNER")) {
-            throw new BadRequestException("블로그 공개 여부는 블로그 소유자만 변경 가능합니다.");
+            throw new UnAuthenticatedException("블로그 소유자가 아닙니다.");
         }
         return newBlogMapping.getBlog();
     }
@@ -182,7 +185,7 @@ public class BlogService {
     private void verifyMemberIsBlogOwner(Long mbNo, String blogFid) {
         BlogMemberMapping mapping = blogMemberMappingRepository.findByMember_MbNoAndBlog_BlogFid(mbNo, blogFid);
         if (!mapping.getRole().getRoleId().equalsIgnoreCase("ROLE_OWNER")) {
-            throw new BadRequestException("블로그 정보는 블로그 소유자만 변경할 수 있습니다.");
+            throw new UnAuthenticatedException("블로그 소유자가 아닙니다.");
         }
     }
 
@@ -193,7 +196,7 @@ public class BlogService {
      * @throws BlogFidDuplicatedException 중복된 blogFid인 경우
      */
     private void validateDuplicateBlogFid(String blogFid) {
-        if (blogRepository.existsById(blogFid)) {
+        if (blogRepository.existsByBlogFid(blogFid)) {
             throw new BlogFidDuplicatedException(String.format("이미 사용 중인 blog fid 입니다: %s", blogFid));
         }
     }
