@@ -3,9 +3,13 @@ package site.caboomlog.backendservice.blogmember.repository;
 import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import site.caboomlog.backendservice.blog.dto.TeamBlogMemberResponse;
 import site.caboomlog.backendservice.blog.entity.QBlog;
 import site.caboomlog.backendservice.blogmember.QBlogMemberMapping;
+import site.caboomlog.backendservice.member.entity.QMember;
 
 import java.util.List;
 
@@ -14,33 +18,38 @@ public class BlogMemberMappingRepositoryImpl implements BlogMemberMappingReposit
     private final JPAQueryFactory queryFactory;
 
     @Override
-    public List<TeamBlogMemberResponse> findTeamBlogMemberInfo(Long ownerMbNo, String blogFid, String roleId) {
+    public Page<TeamBlogMemberResponse> findTeamBlogMemberInfo(String blogFid, String roleId, Pageable pageable) {
         QBlogMemberMapping mp = QBlogMemberMapping.blogMemberMapping;
         QBlog b = QBlog.blog;
+        QMember m = QMember.member;
 
-        return queryFactory
+        List<TeamBlogMemberResponse> content = queryFactory
                 .select(Projections.constructor(TeamBlogMemberResponse.class,
-                        mp.member.mbNo,
+                        m.mbUuid,
                         mp.mbNickname,
                         b.blogFid))
                 .from(mp)
+                .join(mp.member, m)
                 .join(mp.blog, b)
                 .where(
-                        mp.member.mbNo.eq(ownerMbNo),
                         mp.role.roleId.eq(roleId),
                         mp.blog.blogFid.eq(blogFid),
                         b.blogMain.isTrue()
                 )
+                .offset(pageable.getOffset())
+                .limit(pageable.getPageSize())
+                .orderBy(mp.mbNickname.asc())
                 .fetch();
+        Long total = queryFactory
+                .select(mp.count())
+                .from(mp)
+                .join(mp.blog, b)
+                .where(
+                        mp.role.roleId.eq(roleId),
+                        mp.blog.blogFid.eq(blogFid),
+                        b.blogMain.isTrue()
+                )
+                .fetchOne();
+        return new PageImpl<>(content, pageable, total);
     }
 }
-
-/*
-select mp.mb_no, mp.mb_nickname, b.blog_fid
-from blog_member_mappings mp
-inner join blogs b on  mp.blog_id = b.blog_id
-where mp.mb_no=ownerMbNo
-and mp.blog_id=blogFid
-and mp.role_id=roleId
-and b.blog_main = 1;
- */

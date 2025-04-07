@@ -29,7 +29,7 @@ public class LoginMemberArgumentResolver implements HandlerMethodArgumentResolve
     public Object resolveArgument(MethodParameter parameter, ModelAndViewContainer mavContainer, NativeWebRequest webRequest, WebDataBinderFactory binderFactory) throws Exception {
         String mbUuid = webRequest.getHeader("X-Caboomlog-UID");
         if (!StringUtils.hasText(mbUuid)) {
-            throw new UnauthorizedException("X-Caboomlog-UID 없음");
+            throw new UnauthorizedException("X-Caboomlog-UID 헤더 없음");
         }
         Member member = memberRepository.findByMbUuid(mbUuid)
                 .orElseThrow(() -> new MemberNotFoundException("존재하지 않는 회원입니다."));

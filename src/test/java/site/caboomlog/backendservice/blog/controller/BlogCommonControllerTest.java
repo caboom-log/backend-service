@@ -19,7 +19,6 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
-import org.springframework.web.servlet.HandlerInterceptor;
 import site.caboomlog.backendservice.blog.advice.BlogControllerAdvice;
 import site.caboomlog.backendservice.blog.dto.BlogInfoResponse;
 import site.caboomlog.backendservice.blog.exception.BlogFidDuplicatedException;
@@ -91,24 +90,10 @@ class BlogCommonControllerTest {
     @BeforeEach
     void setup(@Autowired HandlerMethodArgumentResolver loginMemberArgumentResolver,
                @Autowired AuthHeaderInterceptor authHeaderInterceptor) {
-
-        HandlerInterceptor testInterceptor = new HandlerInterceptor() {
-            @Override
-            public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
-                String uri = request.getRequestURI();
-
-                if (uri.matches("/api/blogs/[^/]+$")) {
-                    return true;
-                }
-
-                return authHeaderInterceptor.preHandle(request, response, handler);
-            }
-        };
-
         mockMvc = MockMvcBuilders
                 .standaloneSetup(new BlogCommonController(blogService))
                 .setCustomArgumentResolvers(loginMemberArgumentResolver)
-                .addInterceptors(testInterceptor)
+                .addInterceptors(authHeaderInterceptor)
                 .setControllerAdvice(BlogControllerAdvice.class, CommonControllerAdvice.class)
                 .build();
     }

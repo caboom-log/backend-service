@@ -1,8 +1,9 @@
 package site.caboomlog.backendservice.blogmember.repository;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import site.caboomlog.backendservice.blog.dto.TeamBlogMemberResponse;
-import java.util.List;
 
 public interface BlogMemberMappingRepositoryCustom {
-    List<TeamBlogMemberResponse> findTeamBlogMemberInfo(Long ownerMbNo, String blogFid, String roleId);
+    Page<TeamBlogMemberResponse> findTeamBlogMemberInfo(String blogFid, String roleId, Pageable pageable);
 }

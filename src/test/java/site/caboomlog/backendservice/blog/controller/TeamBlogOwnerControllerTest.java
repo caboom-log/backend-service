@@ -1,7 +1,5 @@
 package site.caboomlog.backendservice.blog.controller;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -15,7 +13,6 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
-import org.springframework.web.servlet.HandlerInterceptor;
 import site.caboomlog.backendservice.blog.advice.BlogControllerAdvice;
 import site.caboomlog.backendservice.blog.advice.TeamBlogOwnerControllerAdvice;
 import site.caboomlog.backendservice.blog.exception.AlreadyInvitedException;
@@ -82,16 +79,10 @@ class TeamBlogOwnerControllerTest {
     void setup(@Autowired HandlerMethodArgumentResolver loginMemberArgumentResolver,
                @Autowired AuthHeaderInterceptor authHeaderInterceptor) {
 
-        HandlerInterceptor testInterceptor = new HandlerInterceptor() {
-            @Override
-            public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
-                return authHeaderInterceptor.preHandle(request, response, handler);
-            }
-        };
         mockMvc = MockMvcBuilders
                 .standaloneSetup(new TeamBlogOwnerController(teamBlogOwnerService))
                 .setCustomArgumentResolvers(loginMemberArgumentResolver)
-                .addInterceptors(testInterceptor)
+                .addInterceptors(authHeaderInterceptor)
                 .setControllerAdvice(TeamBlogOwnerControllerAdvice.class,
                         BlogControllerAdvice.class,
                         CommonControllerAdvice.class)

@@ -1,8 +1,11 @@
 package site.caboomlog.backendservice.blog.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import site.caboomlog.backendservice.blog.dto.TeamBlogMemberResponse;
 import site.caboomlog.backendservice.blog.entity.Blog;
 import site.caboomlog.backendservice.blog.entity.BlogType;
 import site.caboomlog.backendservice.blog.entity.TeamBlogInvite;
@@ -30,25 +33,26 @@ public class TeamBlogService {
     private final RoleRepository roleRepository;
 
     /**
-     * 팀 블로그 초대 수락 로직을 처리합니다.
+     * 팀 블로그 초대를 수락하고 블로그에 가입합니다.
      *
-     * <p>아래 조건을 모두 만족해야 가입 처리가 완료됩니다:</p>
+     * <p>아래 조건을 모두 만족할 경우에만 블로그 가입이 완료됩니다:</p>
      * <ul>
-     *   <li>해당 블로그가 존재하고 팀 블로그일 것</li>
-     *   <li>유저에게 해당 블로그 초대가 존재하고, 상태가 PENDING일 것</li>
-     *   <li>블로그 내 닉네임이 중복되지 않을 것</li>
-     *   <li>이미 가입된 상태가 아닐 것</li>
+     *   <li>블로그가 존재하고, 팀 블로그일 것</li>
+     *   <li>해당 유저에게 초대가 존재하고 상태가 <b>PENDING</b>일 것</li>
+     *   <li>이미 가입되지 않았을 것</li>
+     *   <li>닉네임이 블로그 내에서 중복되지 않을 것</li>
      * </ul>
      *
-     * <p>요건을 만족하면 초대 상태를 ACCEPTED로 변경하고,
+     * <p>조건을 만족하면 초대 상태를 <b>ACCEPTED</b>로 변경하고,
      * blog_member_mappings 테이블에 새로운 멤버 매핑을 생성합니다.</p>
      *
      * @param blogFid 블로그 식별자
-     * @param mbNo 수락하는 유저의 회원 번호
+     * @param mbNo 현재 로그인한 사용자(가입자)의 회원 번호
      * @param blogMbNickname 블로그 내에서 사용할 닉네임
-     * @throws BlogNotFoundException 블로그가 존재하지 않을 경우
-     * @throws BadRequestException 초대가 없거나 유효하지 않거나, 이미 가입된 상태일 경우
-     * @throws BlogMemberNicknameConflictException 블로그 닉네임이 중복된 경우
+     *
+     * @throws BlogNotFoundException 해당 블로그가 존재하지 않는 경우
+     * @throws BadRequestException 초대가 없거나 유효하지 않거나 이미 가입된 경우
+     * @throws BlogMemberNicknameConflictException 닉네임이 중복된 경우
      */
     @Transactional
     public void joinTeamBlog(String blogFid, Long mbNo, String blogMbNickname) {
@@ -92,5 +96,19 @@ public class TeamBlogService {
         BlogMemberMapping blogMemberMapping = BlogMemberMapping.ofNewBlogMemberMapping(blog, member, roleMember, blogMbNickname);
         blogMemberMappingRepository.save(blogMemberMapping);
 
+    }
+
+    /**
+     * 팀 블로그의 일반 멤버 목록을 조회합니다.
+     *
+     * <p>해당 블로그의 <b>ROLE_MEMBER</b> 권한을 가진 모든 사용자 정보를 페이징 처리하여 반환합니다.</p>
+     *
+     * @param blogFid 블로그 식별자
+     * @param pageable 페이징 정보 (페이지 번호, 크기, 정렬 조건 포함)
+     * @return 멤버 정보 목록
+     */
+    public Page<TeamBlogMemberResponse> getMembers(String blogFid, Pageable pageable) {
+        return blogMemberMappingRepository
+                .findTeamBlogMemberInfo(blogFid, "ROLE_MEMBER", pageable);
     }
 }
