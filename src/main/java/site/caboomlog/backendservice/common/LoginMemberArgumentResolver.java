@@ -3,6 +3,7 @@ package site.caboomlog.backendservice.common;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.MethodParameter;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.support.WebDataBinderFactory;
 import org.springframework.web.context.request.NativeWebRequest;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
@@ -27,13 +28,11 @@ public class LoginMemberArgumentResolver implements HandlerMethodArgumentResolve
     @Override
     public Object resolveArgument(MethodParameter parameter, ModelAndViewContainer mavContainer, NativeWebRequest webRequest, WebDataBinderFactory binderFactory) throws Exception {
         String mbUuid = webRequest.getHeader("X-Caboomlog-UID");
-        if (mbUuid == null || mbUuid.isBlank()) {
+        if (!StringUtils.hasText(mbUuid)) {
             throw new UnauthorizedException("X-Caboomlog-UID 없음");
         }
-        Member member = memberRepository.findByMbUuid(mbUuid);
-        if (member == null) {
-            throw new MemberNotFoundException("존재하지 않는 회원입니다.");
-        }
+        Member member = memberRepository.findByMbUuid(mbUuid)
+                .orElseThrow(() -> new MemberNotFoundException("존재하지 않는 회원입니다."));
         return member.getMbNo();
     }
 }

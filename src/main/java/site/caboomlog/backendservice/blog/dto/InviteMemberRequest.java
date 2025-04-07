@@ -7,5 +7,5 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
 public class InviteMemberRequest {
-    private Long mbNo;
+    private String mbUuid;
 }

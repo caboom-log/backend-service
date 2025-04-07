@@ -1,20 +1,21 @@
 package site.caboomlog.backendservice.blog.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import site.caboomlog.backendservice.blog.dto.TeamBlogMemberResponse;
-import site.caboomlog.backendservice.blog.dto.TeamBlogMembersResponse;
 import site.caboomlog.backendservice.blog.entity.Blog;
 import site.caboomlog.backendservice.blog.entity.BlogType;
 import site.caboomlog.backendservice.blog.entity.TeamBlogInvite;
+import site.caboomlog.backendservice.blog.entity.TeamBlogInviteStatus;
+import site.caboomlog.backendservice.blog.exception.AlreadyInvitedException;
 import site.caboomlog.backendservice.blog.exception.BlogNotFoundException;
 import site.caboomlog.backendservice.blog.repository.TeamBlogInviteRepository;
-import site.caboomlog.backendservice.blog.repository.TeamBlogKickRepository;
 import site.caboomlog.backendservice.blogmember.BlogMemberMapping;
 import site.caboomlog.backendservice.blogmember.repository.BlogMemberMappingRepository;
 import site.caboomlog.backendservice.common.exception.BadRequestException;
+import site.caboomlog.backendservice.common.exception.UnAuthenticatedException;
 import site.caboomlog.backendservice.common.notification.entity.NotificationType;
 import site.caboomlog.backendservice.common.notification.event.NotificationCreatedEvent;
 import site.caboomlog.backendservice.common.notification.entity.Notification;
@@ -22,20 +23,21 @@ import site.caboomlog.backendservice.common.notification.repository.Notification
 import site.caboomlog.backendservice.common.notification.repository.NotificationTypeRepository;
 import site.caboomlog.backendservice.member.entity.Member;
 import site.caboomlog.backendservice.member.exception.MemberNotFoundException;
+import site.caboomlog.backendservice.member.exception.MemberWithdrawException;
 import site.caboomlog.backendservice.member.repository.MemberRepository;
-import site.caboomlog.backendservice.role.repository.RoleRepository;
 
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class TeamBlogOwnerService {
 
     private final BlogMemberMappingRepository blogMemberMappingRepository;
     private final NotificationTypeRepository notificationTypeRepository;
     private final NotificationRepository notificationRepository;
     private final MemberRepository memberRepository;
-    private final TeamBlogInviteRepository teamBlogInviterRepository;
+    private final TeamBlogInviteRepository teamBlogInviteRepository;
     private final ApplicationEventPublisher eventPublisher;
     private final TeamBlogMemberKicker teamBlogMemberKicker;
 
@@ -50,35 +52,30 @@ public class TeamBlogOwnerService {
      * @param blogFid 블로그 식별자
      */
     @Transactional
-    public void inviteMember(Long ownerMbNo, Long inviteeMbNo, String blogFid) {
+    public void inviteMember(Long ownerMbNo, String inviteeMbUuid, String blogFid) {
         Blog blog = getOwnedTeamBlog(ownerMbNo, blogFid);
-        Member invitee = getTargetMember(inviteeMbNo);
+        Member invitee = memberRepository.findByMbUuid(inviteeMbUuid)
+                .orElseThrow(() -> new MemberNotFoundException("존재하지 않는 회원입니다."));
+        if (invitee.getWithdrawalAt() != null) {
+            throw new MemberWithdrawException("이미 탈퇴한 회원입니다.");
+        }
+
+        if (!teamBlogInviteRepository
+                .existsByMember_MbNoAndBlog_BlogFidAndAndStatus(invitee.getMbNo(), blogFid, TeamBlogInviteStatus.PENDING)) {
+            throw new AlreadyInvitedException("이미 초대된 회원입니다.");
+        }
 
         TeamBlogInvite teamBlogInvite = TeamBlogInvite.ofNewTeamBlogInvite(
                 blog,
                 invitee
         );
-        teamBlogInviterRepository.save(teamBlogInvite);
+        teamBlogInviteRepository.save(teamBlogInvite);
+
 
         Notification notification = createInviteNotification(ownerMbNo, invitee, blog, teamBlogInvite);
         notificationRepository.save(notification);
 
-        eventPublisher.publishEvent(new NotificationCreatedEvent(inviteeMbNo, notification.getMessage()));
-    }
-
-    /**
-     * 팀 블로그의 일반 멤버 목록을 조회합니다.
-     *
-     * <p>해당 블로그의 소유자 권한을 확인한 뒤, ROLE_MEMBER 권한을 가진 멤버들을 조회하여 응답합니다.</p>
-     *
-     * @param blogFid 블로그 식별자 (URL용 고유 키)
-     * @param ownerMbNo 블로그 소유자의 회원 번호
-     * @return 팀 블로그 멤버 목록 응답 DTO
-     */
-    public TeamBlogMembersResponse getMembers(String blogFid, Long ownerMbNo) {
-        List<TeamBlogMemberResponse> members = blogMemberMappingRepository
-                .findTeamBlogMemberInfo(ownerMbNo, blogFid, "ROLE_MEMBER");
-        return new TeamBlogMembersResponse(members);
+        eventPublisher.publishEvent(new NotificationCreatedEvent(invitee.getMbNo(), notification.getMessage()));
     }
 
     /**
@@ -93,13 +90,16 @@ public class TeamBlogOwnerService {
      * @throws BadRequestException 이미 추방되었거나 권한이 없는 경우
      */
     @Transactional(readOnly = true)
-    public void kickMember(String blogFid, Long ownerMbNo, Long mbNo) {
+    public void kickMember(String blogFid, Long ownerMbNo, String targetMbNickname) {
         Blog blog = getOwnedTeamBlog(ownerMbNo, blogFid);
-        Member owner = getTargetMember(ownerMbNo);
-        BlogMemberMapping blogMemberMapping = blogMemberMappingRepository.findByMember_MbNoAndBlog_BlogFid(
-                mbNo, blogFid
-        );
-        teamBlogMemberKicker.kickSingleMember(blog, owner, blogMemberMapping);
+        Member owner = memberRepository.findById(ownerMbNo)
+                .orElseThrow(() -> new MemberNotFoundException("존재하지 않는 회원입니다."));
+        BlogMemberMapping targetMapping = blogMemberMappingRepository
+                .findByBlog_BlogFidAndMbNickname(blogFid, targetMbNickname);
+        if (targetMapping == null) {
+            throw new MemberNotFoundException("멤버가 존재하지 않습니다.");
+        }
+        teamBlogMemberKicker.kickSingleMember(blog, owner, targetMapping);
     }
 
     /**
@@ -116,7 +116,8 @@ public class TeamBlogOwnerService {
     public void kickAllMembers(String blogFid, Long ownerMbNo) {
         Blog blog = getOwnedTeamBlog(ownerMbNo, blogFid);
         Member owner = getTargetMember(ownerMbNo);
-        List<BlogMemberMapping> mappings = blogMemberMappingRepository.findAllByBlog_BlogFidAndRole_RoleId(blogFid, "ROLE_MEMBER");
+        List<BlogMemberMapping> mappings = blogMemberMappingRepository
+                .findAllByBlog_BlogFidAndRole_RoleId(blogFid, "ROLE_MEMBER");
         for (BlogMemberMapping blogMemberMapping : mappings) {
             teamBlogMemberKicker.kickSingleMember(blog, owner, blogMemberMapping);
         }
@@ -134,9 +135,9 @@ public class TeamBlogOwnerService {
      * @throws BadRequestException 유효하지 않은 권한이거나 팀 블로그가 아닐 경우
      */
     @Transactional
-    public void transferOwnership(String blogFid, Long ownerMbNo, Long newOwnerMbNo) {
+    public void transferOwnership(String blogFid, Long ownerMbNo, String newOwnerMbUuid) {
         BlogMemberMapping ownerMapping = blogMemberMappingRepository.findByMember_MbNoAndBlog_BlogFid(ownerMbNo, blogFid);
-        BlogMemberMapping newOwnerMapping = blogMemberMappingRepository.findByMember_MbNoAndBlog_BlogFid(newOwnerMbNo, blogFid);
+        BlogMemberMapping newOwnerMapping = blogMemberMappingRepository.findByMember_MbUuidAndBlog_BlogFid(newOwnerMbUuid, blogFid);
         BlogMemberMapping.transferOwnership(ownerMapping, newOwnerMapping);
     }
 
@@ -156,11 +157,11 @@ public class TeamBlogOwnerService {
             throw new BlogNotFoundException("존재하지 않는 멤버 또는 블로그입니다.");
         }
         if (!blogMemberMapping.getRole().getRoleId().equalsIgnoreCase("ROLE_OWNER")) {
-            throw new BadRequestException("블로그 멤버 초대는 블로그 소유자만 가능합니다.");
+            throw new UnAuthenticatedException("블로그 소유자가 아닙니다.");
         }
         Blog blog = blogMemberMapping.getBlog();
         if (blog.getBlogType() != BlogType.TEAM) {
-            throw new BadRequestException("멤버 초대는 팀 블로그만 가능합니다.");
+            throw new BadRequestException("팀 블로그가 아닙니다.");
         }
         return blog;
     }
@@ -174,7 +175,7 @@ public class TeamBlogOwnerService {
      */
     private Member getTargetMember(Long mbNo) {
         return memberRepository.findById(mbNo)
-                .orElseThrow(() -> new MemberNotFoundException("존재하지 않는 회원입니다. mbNo: " + mbNo));
+                .orElseThrow(() -> new MemberNotFoundException("존재하지 않는 회원입니다."));
     }
 
     /**

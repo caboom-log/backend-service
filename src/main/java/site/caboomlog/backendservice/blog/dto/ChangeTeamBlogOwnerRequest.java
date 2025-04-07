@@ -6,5 +6,5 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Getter
 public class ChangeTeamBlogOwnerRequest {
-    private Long mbNo;
+    private String mbUuid;
 }

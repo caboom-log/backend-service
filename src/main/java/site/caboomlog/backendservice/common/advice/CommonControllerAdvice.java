@@ -8,8 +8,10 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import site.caboomlog.backendservice.common.dto.ApiResponse;
 import site.caboomlog.backendservice.common.exception.BadRequestException;
 import site.caboomlog.backendservice.common.exception.DatabaseException;
+import site.caboomlog.backendservice.common.exception.UnAuthenticatedException;
 import site.caboomlog.backendservice.common.exception.UnauthorizedException;
 import site.caboomlog.backendservice.member.exception.MemberNotFoundException;
+import site.caboomlog.backendservice.member.exception.MemberWithdrawException;
 import site.caboomlog.backendservice.role.exception.RoleNotFoundException;
 
 @RestControllerAdvice
@@ -58,6 +60,13 @@ public class CommonControllerAdvice {
                 .body(ApiResponse.error(401, e.getMessage()));
     }
 
+    @ExceptionHandler(UnAuthenticatedException.class)
+    public ResponseEntity<ApiResponse<Void>> handleUnAuthenticatedException(UnAuthenticatedException e) {
+        log.info("handleUnAuthenticatedException - ", e);
+        return ResponseEntity.status(403)
+                .body(ApiResponse.error(403, e.getMessage()));
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiResponse<Void>> handleMethodArgumentNotValidException(MethodArgumentNotValidException e) {
         log.info("handleMethodArgumentNotValidException - ", e);
@@ -66,5 +75,12 @@ public class CommonControllerAdvice {
                 .forEach(err -> builder.append(err.getDefaultMessage()).append("\n"));
         return ResponseEntity.status(400)
                 .body(ApiResponse.badRequest(builder.toString()));
+    }
+
+    @ExceptionHandler(MemberWithdrawException.class)
+    public ResponseEntity<ApiResponse<Void>> handleMemberWithdrawException(MemberWithdrawException e) {
+        log.info("handleMemberWithdrawException - ", e);
+        return ResponseEntity.status(400)
+                .body(ApiResponse.badRequest(e.getMessage()));
     }
 }

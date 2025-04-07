@@ -12,6 +12,8 @@ public interface BlogMemberMappingRepository extends JpaRepository<BlogMemberMap
 
     BlogMemberMapping findByMember_MbNoAndBlog_BlogFid(Long mbNo, String blogFid);
 
+    BlogMemberMapping findByMember_MbUuidAndBlog_BlogFid(String mbUuid, String blogFid);
+
     int countByMember_MbNo(Long mbNo);
 
     boolean existsByMember_MbNoAndBlogBlogMain(Long mbNo, boolean isMain);
@@ -19,4 +21,6 @@ public interface BlogMemberMappingRepository extends JpaRepository<BlogMemberMap
     List<BlogMemberMapping> findAllByBlog_BlogFidAndRole_RoleId(String blogFid, String roleId);
 
     boolean existsByBlog_BlogFidAndMbNickname(String blogFid, String mbNickname);
+
+    BlogMemberMapping findByBlog_BlogFidAndMbNickname(String blogFid, String mbNickname);
 }

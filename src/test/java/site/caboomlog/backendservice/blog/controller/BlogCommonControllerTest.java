@@ -36,6 +36,7 @@ import site.caboomlog.backendservice.member.repository.MemberRepository;
 import site.caboomlog.backendservice.role.exception.RoleNotFoundException;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Stream;
 
@@ -64,6 +65,10 @@ class BlogCommonControllerTest {
     @Autowired
     ObjectMapper objectMapper;
 
+    Optional<Member> testMember = Optional.of(
+            Member.ofExistingMember(1L, "test@test.com",
+            "caboom", "testpwd",
+            "010-0000-1111", null, null));
 
     @TestConfiguration
     static class MockConfig {
@@ -190,7 +195,7 @@ class BlogCommonControllerTest {
               "blogType": "personal"
             }
             """;
-        Mockito.when(memberRepository.findByMbUuid(anyString())).thenReturn(null);
+        Mockito.when(memberRepository.findByMbUuid(anyString())).thenReturn(Optional.empty());
 
         // when & then
         mockMvc.perform(post("/api/blogs")
@@ -208,9 +213,7 @@ class BlogCommonControllerTest {
     @MethodSource("invalidCreateBlogRequestProvider")
     void createBlogFail_BadRequest(String requestStr) throws Exception {
         // given
-        Member testMember = Member.ofExistingMember(1L, "test@test.com",
-                "caboom", "testpwd",
-                "010-0000-1111", null, null);
+
         Mockito.when(memberRepository.findByMbUuid(anyString())).thenReturn(testMember);
 
         // when & then
@@ -272,9 +275,6 @@ class BlogCommonControllerTest {
               "blogType": "personal"
             }
             """;
-        Member testMember = Member.ofExistingMember(1L, "test@test.com",
-                "caboom", "testpwd",
-                "010-0000-1111", null, null);
         Mockito.when(memberRepository.findByMbUuid(anyString())).thenReturn(testMember);
         Mockito.doThrow(new MemberNotFoundException("존재하지 않는 mbNo 입니다: 1L"))
                 .when(blogService).createBlog(any(), anyLong());
@@ -306,9 +306,6 @@ class BlogCommonControllerTest {
               "blogType": "personal"
             }
             """;
-        Member testMember = Member.ofExistingMember(1L, "test@test.com",
-                "caboom", "testpwd",
-                "010-0000-1111", null, null);
         Mockito.when(memberRepository.findByMbUuid(anyString())).thenReturn(testMember);
         Mockito.doThrow(new RoleNotFoundException("권한이 존재하지 않습니다: ROLE_OWNER"))
                 .when(blogService).createBlog(any(), anyLong());
@@ -340,9 +337,6 @@ class BlogCommonControllerTest {
               "blogType": "personal"
             }
             """;
-        Member testMember = Member.ofExistingMember(1L, "test@test.com",
-                "caboom", "testpwd",
-                "010-0000-1111", null, null);
         Mockito.when(memberRepository.findByMbUuid(anyString())).thenReturn(testMember);
         Mockito.doThrow(new BlogFidDuplicatedException("이미 사용 중인 blog fid 입니다: caboom"))
                 .when(blogService).createBlog(any(), anyLong());
@@ -373,9 +367,6 @@ class BlogCommonControllerTest {
               "blogType": "personal"
             }
             """;
-        Member testMember = Member.ofExistingMember(1L, "test@test.com",
-                "caboom", "testpwd",
-                "010-0000-1111", null, null);
         Mockito.when(memberRepository.findByMbUuid(anyString())).thenReturn(testMember);
         Mockito.doThrow(new InvalidBlogCountRangeException("블로그는 최대 3개까지 생성 가능합니다."))
                 .when(blogService).createBlog(any(), anyLong());
@@ -407,9 +398,6 @@ class BlogCommonControllerTest {
               "blogType": "personal"
             }
             """;
-        Member testMember = Member.ofExistingMember(1L, "test@test.com",
-                "caboom", "testpwd",
-                "010-0000-1111", null, null);
         Mockito.when(memberRepository.findByMbUuid(anyString())).thenReturn(testMember);
         Mockito.doNothing()
                 .when(blogService).createBlog(any(), anyLong());
@@ -435,9 +423,6 @@ class BlogCommonControllerTest {
               "blogName": "changedName"
             }
             """;
-        Member testMember = Member.ofExistingMember(1L, "test@test.com",
-                "caboom", "testpwd",
-                "010-0000-1111", null, null);
         Mockito.when(memberRepository.findByMbUuid(anyString())).thenReturn(testMember);
         Mockito.doNothing()
                 .when(blogService).modifyBlogInfo(anyString(), anyLong(), any());
@@ -465,9 +450,6 @@ class BlogCommonControllerTest {
               "blogPublic" : true
             }
             """;
-        Member testMember = Member.ofExistingMember(1L, "test@test.com",
-                "caboom", "testpwd",
-                "010-0000-1111", null, null);
         Mockito.when(memberRepository.findByMbUuid(anyString())).thenReturn(testMember);
         Mockito.doNothing()
                 .when(blogService).modifyBlogInfo(anyString(), anyLong(), any());
@@ -495,9 +477,6 @@ class BlogCommonControllerTest {
               "blogPublic" : true
             }
             """;
-        Member testMember = Member.ofExistingMember(1L, "test@test.com",
-                "caboom", "testpwd",
-                "010-0000-1111", null, null);
         Mockito.when(memberRepository.findByMbUuid(anyString())).thenReturn(testMember);
         Mockito.doThrow(new BlogNotFoundException("블로그가 존재하지 않습니다. blogFid: caboom"))
                 .when(blogService).modifyBlogInfo(anyString(), anyLong(), any());
@@ -518,9 +497,6 @@ class BlogCommonControllerTest {
     @DisplayName("메인블로그 변경 실패 - 잘못된 요청")
     void switchMainBlogFail_BadRequest() throws Exception {
         // given
-        Member testMember = Member.ofExistingMember(1L, "test@test.com",
-                "caboom", "testpwd",
-                "010-0000-1111", null, null);
         Mockito.when(memberRepository.findByMbUuid(anyString())).thenReturn(testMember);
         Mockito.doThrow(new BadRequestException("잘못된 요청"))
                 .when(blogService).switchMainBlogTo(anyString(), anyLong());
@@ -539,9 +515,6 @@ class BlogCommonControllerTest {
     @DisplayName("메인블로그 변경 성공")
     void switchMainBlog() throws Exception {
         // given
-        Member testMember = Member.ofExistingMember(1L, "test@test.com",
-                "caboom", "testpwd",
-                "010-0000-1111", null, null);
         Mockito.when(memberRepository.findByMbUuid(anyString())).thenReturn(testMember);
         Mockito.doNothing()
                 .when(blogService).switchMainBlogTo(anyString(), anyLong());
