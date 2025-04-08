@@ -8,7 +8,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import site.caboomlog.backendservice.blog.dto.TeamBlogMemberResponse;
 import site.caboomlog.backendservice.blog.entity.QBlog;
-import site.caboomlog.backendservice.blogmember.QBlogMemberMapping;
+import site.caboomlog.backendservice.blogmember.entity.QBlogMemberMapping;
 import site.caboomlog.backendservice.member.entity.QMember;
 
 import java.util.List;

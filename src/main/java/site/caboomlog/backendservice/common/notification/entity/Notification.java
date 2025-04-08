@@ -31,7 +31,7 @@ public class Notification {
     @Column(name = "reference_id")
     private Long referenceId;
 
-    @Column(name = "read")
+    @Column(name = "read", columnDefinition = "tinyint")
     private boolean read;
 
     @Column(name = "message")

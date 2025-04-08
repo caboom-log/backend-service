@@ -27,7 +27,7 @@ public class TeamBlogInvite {
     @ManyToOne(fetch = FetchType.LAZY)
     private Member member;
 
-    @Enumerated
+    @Enumerated(EnumType.STRING)
     @Column(name = "status")
     private TeamBlogInviteStatus status;
 
