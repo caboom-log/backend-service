@@ -10,6 +10,7 @@ import site.caboomlog.backendservice.blog.entity.TeamBlogKick;
 import site.caboomlog.backendservice.blog.repository.TeamBlogKickRepository;
 import site.caboomlog.backendservice.blogmember.BlogMemberMapping;
 import site.caboomlog.backendservice.common.exception.BadRequestException;
+import site.caboomlog.backendservice.common.exception.DatabaseException;
 import site.caboomlog.backendservice.common.notification.entity.Notification;
 import site.caboomlog.backendservice.common.notification.entity.NotificationType;
 import site.caboomlog.backendservice.common.notification.event.NotificationCreatedEvent;
@@ -45,6 +46,9 @@ public class TeamBlogMemberKicker {
                 blogMemberMapping.getMember(),
                 blog));
         Role kicked = roleRepository.findByRoleId("ROLE_KICKED");
+        if (kicked == null) {
+            throw new DatabaseException("Role ID 'ROLE_KICKED' 데이터베이스에 없음");
+        }
         if (blogMemberMapping.getRole().equals(kicked) ||
                 blogMemberMapping.getMember().getWithdrawalAt() != null) {
             throw new BadRequestException("추방할 수 없거나 이미 추방된 회원입니다.");
@@ -70,6 +74,9 @@ public class TeamBlogMemberKicker {
     private Notification createKickedNotification(Member targetMember, String blogName,
                                                   TeamBlogKick teamBlogKick) {
         NotificationType kicked = notificationTypeRepository.findByNotificationTypeName("KICKED");
+        if (kicked == null) {
+            throw new DatabaseException("NotificationType ID 'KICKED' 데이터베이스에 없음");
+        }
         return Notification.ofNewNotification(
                 targetMember,
                 kicked,
