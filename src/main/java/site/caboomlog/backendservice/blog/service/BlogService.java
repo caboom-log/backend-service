@@ -41,6 +41,7 @@ public class BlogService {
      * @return {@link BlogInfoResponse} 블로그 이름, 설명, 대표 이미지 포함
      * @throws BlogNotFoundException 해당 블로그가 존재하지 않을 경우
      */
+    @Transactional(readOnly = true)
     public BlogInfoResponse getBlogInfo(String blogFid) {
         Optional<Blog> optionalBlog = blogRepository.findByBlogFid(blogFid);
         if (optionalBlog.isEmpty()) {

@@ -17,6 +17,7 @@ import site.caboomlog.backendservice.blog.repository.TeamBlogInviteRepository;
 import site.caboomlog.backendservice.blogmember.BlogMemberMapping;
 import site.caboomlog.backendservice.blogmember.repository.BlogMemberMappingRepository;
 import site.caboomlog.backendservice.common.exception.BadRequestException;
+import site.caboomlog.backendservice.common.exception.DatabaseException;
 import site.caboomlog.backendservice.member.entity.Member;
 import site.caboomlog.backendservice.member.exception.MemberNotFoundException;
 import site.caboomlog.backendservice.role.entity.Role;
@@ -82,6 +83,9 @@ public class TeamBlogService {
             throw new MemberNotFoundException("존재하지 않는 회원입니다.");
         }
         Role roleMember = roleRepository.findByRoleId("ROLE_MEMBER");
+        if (roleMember == null) {
+            throw new DatabaseException("Role 'ROLE_MEMBER' 데이터베이스에 존재하지 않음");
+        }
 
         BlogMemberMapping mapping = blogMemberMappingRepository.findByMember_MbNoAndBlog_BlogFid(mbNo, blogFid);
         if (mapping != null &&
@@ -107,6 +111,7 @@ public class TeamBlogService {
      * @param pageable 페이징 정보 (페이지 번호, 크기, 정렬 조건 포함)
      * @return 멤버 정보 목록
      */
+    @Transactional(readOnly = true)
     public Page<TeamBlogMemberResponse> getMembers(String blogFid, Pageable pageable) {
         return blogMemberMappingRepository
                 .findTeamBlogMemberInfo(blogFid, "ROLE_MEMBER", pageable);
