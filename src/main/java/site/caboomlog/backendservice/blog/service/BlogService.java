@@ -15,7 +15,7 @@ import site.caboomlog.backendservice.blog.repository.BlogRepository;
 import site.caboomlog.backendservice.blogmember.BlogMemberMapping;
 import site.caboomlog.backendservice.blogmember.repository.BlogMemberMappingRepository;
 import site.caboomlog.backendservice.common.exception.BadRequestException;
-import site.caboomlog.backendservice.common.exception.UnAuthenticatedException;
+import site.caboomlog.backendservice.common.exception.UnauthenticatedException;
 import site.caboomlog.backendservice.member.entity.Member;
 import site.caboomlog.backendservice.member.exception.MemberNotFoundException;
 import site.caboomlog.backendservice.member.repository.MemberRepository;
@@ -170,7 +170,7 @@ public class BlogService {
         BlogMemberMapping newBlogMapping = blogMemberMappingRepository
                 .findByMember_MbNoAndBlog_BlogFid(mbNo, blogFid);
         if (newBlogMapping == null || !newBlogMapping.getRole().getRoleId().equalsIgnoreCase("ROLE_OWNER")) {
-            throw new UnAuthenticatedException("블로그 소유자가 아닙니다.");
+            throw new UnauthenticatedException("블로그 소유자가 아닙니다.");
         }
         return newBlogMapping.getBlog();
     }
@@ -185,7 +185,7 @@ public class BlogService {
     private void verifyMemberIsBlogOwner(Long mbNo, String blogFid) {
         BlogMemberMapping mapping = blogMemberMappingRepository.findByMember_MbNoAndBlog_BlogFid(mbNo, blogFid);
         if (!mapping.getRole().getRoleId().equalsIgnoreCase("ROLE_OWNER")) {
-            throw new UnAuthenticatedException("블로그 소유자가 아닙니다.");
+            throw new UnauthenticatedException("블로그 소유자가 아닙니다.");
         }
     }
 

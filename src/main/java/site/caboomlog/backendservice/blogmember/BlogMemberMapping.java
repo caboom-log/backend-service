@@ -9,6 +9,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import site.caboomlog.backendservice.blog.entity.Blog;
 import site.caboomlog.backendservice.blog.entity.BlogType;
 import site.caboomlog.backendservice.common.exception.BadRequestException;
+import site.caboomlog.backendservice.common.exception.UnauthenticatedException;
 import site.caboomlog.backendservice.member.entity.Member;
 import site.caboomlog.backendservice.role.entity.Role;
 
@@ -80,7 +81,7 @@ public class BlogMemberMapping {
             throw new BadRequestException("블로그 소유자 권한 위임은 팀블로그만 가능합니다.");
         }
         if (!ownerMapping.getRole().getRoleId().equalsIgnoreCase("ROLE_OWNER")) {
-            throw new BadRequestException("블로그 소유자 권한 위임은 블로그 소유자만 가능합니다.");
+            throw new UnauthenticatedException("블로그 소유자 권한 위임은 블로그 소유자만 가능합니다.");
         }
         Role roleOwner = ownerMapping.getRole();
         ownerMapping.changeRole(newOwnerMapping.getRole());

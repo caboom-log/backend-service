@@ -19,7 +19,7 @@ import site.caboomlog.backendservice.blog.repository.BlogRepository;
 import site.caboomlog.backendservice.blogmember.BlogMemberMapping;
 import site.caboomlog.backendservice.blogmember.repository.BlogMemberMappingRepository;
 import site.caboomlog.backendservice.common.exception.BadRequestException;
-import site.caboomlog.backendservice.common.exception.UnAuthenticatedException;
+import site.caboomlog.backendservice.common.exception.UnauthenticatedException;
 import site.caboomlog.backendservice.member.entity.Member;
 import site.caboomlog.backendservice.member.exception.MemberNotFoundException;
 import site.caboomlog.backendservice.member.repository.MemberRepository;
@@ -179,7 +179,7 @@ class BlogServiceTest {
                 .thenReturn(mapping);
 
         // when & then
-        Assertions.assertThrows(UnAuthenticatedException.class,
+        Assertions.assertThrows(UnauthenticatedException.class,
                 () -> blogService.modifyBlogInfo("caboom", 1L, request));
     }
 
@@ -224,7 +224,7 @@ class BlogServiceTest {
                 .thenReturn(mapping);
 
         // when & then
-        Assertions.assertThrows(UnAuthenticatedException.class,
+        Assertions.assertThrows(UnauthenticatedException.class,
                 () -> blogService.switchMainBlogTo("caboom", 1L));
     }
 

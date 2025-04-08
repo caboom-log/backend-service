@@ -20,7 +20,7 @@ import site.caboomlog.backendservice.blog.service.TeamBlogOwnerService;
 import site.caboomlog.backendservice.common.LoginMemberArgumentResolver;
 import site.caboomlog.backendservice.common.advice.CommonControllerAdvice;
 import site.caboomlog.backendservice.common.exception.BadRequestException;
-import site.caboomlog.backendservice.common.exception.UnAuthenticatedException;
+import site.caboomlog.backendservice.common.exception.UnauthenticatedException;
 import site.caboomlog.backendservice.common.interceptor.AuthHeaderInterceptor;
 import site.caboomlog.backendservice.member.entity.Member;
 import site.caboomlog.backendservice.member.exception.MemberNotFoundException;
@@ -109,10 +109,10 @@ class TeamBlogOwnerControllerTest {
 
     @Test
     @DisplayName("멤버 초대 실패 - 블로그 소유자 권한이 없음")
-    void inviteMemberFail_UnAuthenticated() throws Exception {
+    void inviteMemberFail_Unauthenticated() throws Exception {
         // given
         Mockito.when(memberRepository.findByMbUuid(anyString())).thenReturn(testMember);
-        Mockito.doThrow(new UnAuthenticatedException("블로그 소유자가 아님"))
+        Mockito.doThrow(new UnauthenticatedException("블로그 소유자가 아님"))
                 .when(teamBlogOwnerService).inviteMember(anyLong(), anyString(), anyString());
 
         // when & then
@@ -229,10 +229,10 @@ class TeamBlogOwnerControllerTest {
 
     @Test
     @DisplayName("특정 멤버 추방 실패 - 소유자가 아님")
-    void kickSingleMemberFail_UnAuthenticated() throws Exception {
+    void kickSingleMemberFail_Unauthenticated() throws Exception {
         // given
         Mockito.when(memberRepository.findByMbUuid(anyString())).thenReturn(testMember);
-        Mockito.doThrow(new UnAuthenticatedException("블로그 소유자가 아닙니다"))
+        Mockito.doThrow(new UnauthenticatedException("블로그 소유자가 아닙니다"))
                 .when(teamBlogOwnerService).kickMember(anyString(), anyLong(), anyString());
 
         // when & then
@@ -293,10 +293,10 @@ class TeamBlogOwnerControllerTest {
 
     @Test
     @DisplayName("모든 멤버 추방 실패 - 소유자가 아님")
-    void kickAllMembersFail_UnAuthenticated() throws Exception {
+    void kickAllMembersFail_Unauthenticated() throws Exception {
         // given
         Mockito.when(memberRepository.findByMbUuid(anyString())).thenReturn(testMember);
-        Mockito.doThrow(new UnAuthenticatedException("소유자가 아닙니다."))
+        Mockito.doThrow(new UnauthenticatedException("소유자가 아닙니다."))
                 .when(teamBlogOwnerService).kickAllMembers(anyString(), anyLong());
 
         // when & then
@@ -309,10 +309,10 @@ class TeamBlogOwnerControllerTest {
 
     @Test
     @DisplayName("블로그 소유자 권한 위임 실패 - 소유자가 아님")
-    void transferOwnershipFail_UnAuthenticated() throws Exception {
+    void transferOwnershipFail_Unauthenticated() throws Exception {
         // given
         Mockito.when(memberRepository.findByMbUuid(anyString())).thenReturn(testMember);
-        Mockito.doThrow(new UnAuthenticatedException("소유자가 아닙니다."))
+        Mockito.doThrow(new UnauthenticatedException("소유자가 아닙니다."))
                 .when(teamBlogOwnerService).transferOwnership(anyString(), anyLong(), anyString());
         String randomUuid = UUID.randomUUID().toString();
 

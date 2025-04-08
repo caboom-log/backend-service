@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import site.caboomlog.backendservice.common.dto.ApiResponse;
 import site.caboomlog.backendservice.common.exception.BadRequestException;
 import site.caboomlog.backendservice.common.exception.DatabaseException;
-import site.caboomlog.backendservice.common.exception.UnAuthenticatedException;
+import site.caboomlog.backendservice.common.exception.UnauthenticatedException;
 import site.caboomlog.backendservice.common.exception.UnauthorizedException;
 import site.caboomlog.backendservice.member.exception.MemberNotFoundException;
 import site.caboomlog.backendservice.member.exception.MemberWithdrawException;
@@ -60,9 +60,9 @@ public class CommonControllerAdvice {
                 .body(ApiResponse.error(401, e.getMessage()));
     }
 
-    @ExceptionHandler(UnAuthenticatedException.class)
-    public ResponseEntity<ApiResponse<Void>> handleUnAuthenticatedException(UnAuthenticatedException e) {
-        log.info("handleUnAuthenticatedException - ", e);
+    @ExceptionHandler(UnauthenticatedException.class)
+    public ResponseEntity<ApiResponse<Void>> handleUnauthenticatedException(UnauthenticatedException e) {
+        log.info("handleUnauthenticatedException - ", e);
         return ResponseEntity.status(403)
                 .body(ApiResponse.error(403, e.getMessage()));
     }
