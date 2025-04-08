@@ -13,7 +13,7 @@ import site.caboomlog.backendservice.blog.entity.Blog;
 import site.caboomlog.backendservice.blog.entity.BlogType;
 import site.caboomlog.backendservice.blog.entity.TeamBlogKick;
 import site.caboomlog.backendservice.blog.repository.TeamBlogKickRepository;
-import site.caboomlog.backendservice.blogmember.BlogMemberMapping;
+import site.caboomlog.backendservice.blogmember.entity.BlogMemberMapping;
 import site.caboomlog.backendservice.common.exception.BadRequestException;
 import site.caboomlog.backendservice.common.exception.DatabaseException;
 import site.caboomlog.backendservice.common.notification.entity.NotificationType;

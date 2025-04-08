@@ -1,8 +1,6 @@
 package site.caboomlog.backendservice.blog.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -25,7 +23,7 @@ import site.caboomlog.backendservice.blog.exception.BlogFidDuplicatedException;
 import site.caboomlog.backendservice.blog.exception.BlogNotFoundException;
 import site.caboomlog.backendservice.blog.exception.InvalidBlogCountRangeException;
 import site.caboomlog.backendservice.blog.service.BlogService;
-import site.caboomlog.backendservice.common.LoginMemberArgumentResolver;
+import site.caboomlog.backendservice.common.annotation.LoginMemberArgumentResolver;
 import site.caboomlog.backendservice.common.advice.CommonControllerAdvice;
 import site.caboomlog.backendservice.common.exception.BadRequestException;
 import site.caboomlog.backendservice.common.interceptor.AuthHeaderInterceptor;
@@ -198,7 +196,6 @@ class BlogCommonControllerTest {
     @MethodSource("invalidCreateBlogRequestProvider")
     void createBlogFail_BadRequest(String requestStr) throws Exception {
         // given
-
         Mockito.when(memberRepository.findByMbUuid(anyString())).thenReturn(testMember);
 
         // when & then

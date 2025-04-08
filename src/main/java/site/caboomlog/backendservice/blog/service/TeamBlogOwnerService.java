@@ -12,7 +12,7 @@ import site.caboomlog.backendservice.blog.entity.TeamBlogInviteStatus;
 import site.caboomlog.backendservice.blog.exception.AlreadyInvitedException;
 import site.caboomlog.backendservice.blog.exception.BlogNotFoundException;
 import site.caboomlog.backendservice.blog.repository.TeamBlogInviteRepository;
-import site.caboomlog.backendservice.blogmember.BlogMemberMapping;
+import site.caboomlog.backendservice.blogmember.entity.BlogMemberMapping;
 import site.caboomlog.backendservice.blogmember.repository.BlogMemberMappingRepository;
 import site.caboomlog.backendservice.common.exception.BadRequestException;
 import site.caboomlog.backendservice.common.exception.DatabaseException;

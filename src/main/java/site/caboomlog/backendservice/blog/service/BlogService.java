@@ -12,7 +12,7 @@ import site.caboomlog.backendservice.blog.exception.BlogFidDuplicatedException;
 import site.caboomlog.backendservice.blog.exception.BlogNotFoundException;
 import site.caboomlog.backendservice.blog.exception.InvalidBlogCountRangeException;
 import site.caboomlog.backendservice.blog.repository.BlogRepository;
-import site.caboomlog.backendservice.blogmember.BlogMemberMapping;
+import site.caboomlog.backendservice.blogmember.entity.BlogMemberMapping;
 import site.caboomlog.backendservice.blogmember.repository.BlogMemberMappingRepository;
 import site.caboomlog.backendservice.common.exception.BadRequestException;
 import site.caboomlog.backendservice.common.exception.UnauthenticatedException;

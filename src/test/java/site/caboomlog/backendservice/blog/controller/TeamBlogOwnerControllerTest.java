@@ -17,7 +17,7 @@ import site.caboomlog.backendservice.blog.advice.BlogControllerAdvice;
 import site.caboomlog.backendservice.blog.advice.TeamBlogOwnerControllerAdvice;
 import site.caboomlog.backendservice.blog.exception.AlreadyInvitedException;
 import site.caboomlog.backendservice.blog.service.TeamBlogOwnerService;
-import site.caboomlog.backendservice.common.LoginMemberArgumentResolver;
+import site.caboomlog.backendservice.common.annotation.LoginMemberArgumentResolver;
 import site.caboomlog.backendservice.common.advice.CommonControllerAdvice;
 import site.caboomlog.backendservice.common.exception.BadRequestException;
 import site.caboomlog.backendservice.common.exception.UnauthenticatedException;

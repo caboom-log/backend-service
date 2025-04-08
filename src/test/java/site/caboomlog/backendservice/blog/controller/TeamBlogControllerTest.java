@@ -21,7 +21,7 @@ import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import site.caboomlog.backendservice.blog.advice.BlogControllerAdvice;
 import site.caboomlog.backendservice.blog.dto.TeamBlogMemberResponse;
 import site.caboomlog.backendservice.blog.service.TeamBlogService;
-import site.caboomlog.backendservice.common.LoginMemberArgumentResolver;
+import site.caboomlog.backendservice.common.annotation.LoginMemberArgumentResolver;
 import site.caboomlog.backendservice.common.advice.CommonControllerAdvice;
 import site.caboomlog.backendservice.common.exception.BadRequestException;
 import site.caboomlog.backendservice.common.interceptor.AuthHeaderInterceptor;

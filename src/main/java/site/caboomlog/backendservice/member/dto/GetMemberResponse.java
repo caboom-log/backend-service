@@ -6,7 +6,7 @@ import lombok.Getter;
 @AllArgsConstructor
 @Getter
 public class GetMemberResponse {
-    private Long mbNo;
+    private String mbUuid;
     private String mbEmail;
     private String mainBlogFid;
 }

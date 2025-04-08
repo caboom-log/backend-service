@@ -3,7 +3,7 @@ package site.caboomlog.backendservice.member.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import site.caboomlog.backendservice.blogmember.BlogMemberMapping;
+import site.caboomlog.backendservice.blogmember.entity.BlogMemberMapping;
 import site.caboomlog.backendservice.blogmember.repository.BlogMemberMappingRepository;
 import site.caboomlog.backendservice.member.dto.GetMemberResponse;
 import site.caboomlog.backendservice.member.exception.MainBlogNotFoundException;
@@ -32,10 +32,8 @@ public class MemberService {
             throw new MainBlogNotFoundException("메인 블로그는 반드시 하나 이상 존재해야 합니다.");
         }
         return new GetMemberResponse(
-                mbNo,
+                result.getMember().getMbUuid(),
                 result.getMember().getMbEmail(),
                 result.getBlog().getBlogFid());
     }
-
-
 }

@@ -1,4 +1,4 @@
-package site.caboomlog.backendservice.common;
+package site.caboomlog.backendservice.common.annotation;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.MethodParameter;
@@ -8,7 +8,6 @@ import org.springframework.web.bind.support.WebDataBinderFactory;
 import org.springframework.web.context.request.NativeWebRequest;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.method.support.ModelAndViewContainer;
-import site.caboomlog.backendservice.common.annotation.LoginMember;
 import site.caboomlog.backendservice.common.exception.UnauthorizedException;
 import site.caboomlog.backendservice.member.entity.Member;
 import site.caboomlog.backendservice.member.exception.MemberNotFoundException;

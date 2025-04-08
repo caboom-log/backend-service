@@ -1,11 +1,10 @@
-package site.caboomlog.backendservice.common.notification;
+package site.caboomlog.backendservice.common.notification.event;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.event.EventListener;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
-import site.caboomlog.backendservice.common.notification.event.NotificationCreatedEvent;
 
 @Component
 @RequiredArgsConstructor

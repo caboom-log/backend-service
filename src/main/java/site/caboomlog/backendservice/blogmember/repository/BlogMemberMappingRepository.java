@@ -1,7 +1,7 @@
 package site.caboomlog.backendservice.blogmember.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
-import site.caboomlog.backendservice.blogmember.BlogMemberMapping;
+import site.caboomlog.backendservice.blogmember.entity.BlogMemberMapping;
 
 import java.util.List;
 

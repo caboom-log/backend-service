@@ -1,4 +1,4 @@
-package site.caboomlog.backendservice.blogmember;
+package site.caboomlog.backendservice.blogmember.entity;
 
 import jakarta.persistence.*;
 import lombok.AccessLevel;
