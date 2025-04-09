@@ -239,7 +239,8 @@ public class BlogService {
         return blogMemberMappingRepository
                 .findAllByMember_MbNoAndRole_RoleId(mbNo, "ROLE_OWNER")
                 .stream()
-                .map(info -> new MyBlogInfoResponse(info.getBlog().getBlogFid(), info.getBlog().getBlogName()))
+                .map(info -> new MyBlogInfoResponse(
+                        info.getBlog().getBlogFid(), info.getBlog().getBlogName(), info.getBlog().getBlogType().name()))
                 .toList();
     }
 }

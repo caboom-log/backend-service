@@ -528,8 +528,8 @@ class BlogCommonControllerTest {
         // given
         Mockito.when(memberRepository.findByMbUuid(anyString())).thenReturn(testMember);
         List<MyBlogInfoResponse> response = List.of(
-                new MyBlogInfoResponse("test-fid-1", "test-name-1"),
-                new MyBlogInfoResponse("test-fid-2", "test-name-2")
+                new MyBlogInfoResponse("test-fid-1", "test-name-1", "team"),
+                new MyBlogInfoResponse("test-fid-2", "test-name-2", "personal")
         );
         Mockito.when(blogService.getMyBlogInfo(anyLong())).thenReturn(response);
 
@@ -539,6 +539,8 @@ class BlogCommonControllerTest {
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andDo(print())
-                .andExpect(jsonPath("$.content[0].blogFid").value("test-fid-1"));
+                .andExpect(jsonPath("$.content[0].blogFid").value("test-fid-1"))
+                .andExpect(jsonPath("$.content[0].blogType").value("team"))
+                .andExpect(jsonPath("$.content[1].blogType").value("personal"));
     }
 }

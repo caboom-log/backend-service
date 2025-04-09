@@ -286,5 +286,6 @@ class BlogServiceTest {
         Assertions.assertEquals(1, response.size());
         Assertions.assertEquals(testBlog.getBlogFid(), response.get(0).getBlogFid());
         Assertions.assertEquals(testBlog.getBlogName(), response.get(0).getBlogName());
+        Assertions.assertEquals(testBlog.getBlogType().name(), response.get(0).getBlogType());
     }
 }
