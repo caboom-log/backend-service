@@ -50,13 +50,13 @@ public class TeamBlogOwnerService {
      * 초대 정보는 저장되며, 초대 대상자에게 알림이 전송됩니다.
      *
      * @param ownerMbNo        블로그 소유자의 회원 번호
-     * @param inviteeMbUuid    초대 대상자의 회원 UUID
+     * @param inviteeMbEmail    초대 대상자의 회원 이메일 아이디
      * @param blogFid          초대할 블로그의 식별자
      */
     @Transactional
-    public void inviteMember(Long ownerMbNo, String inviteeMbUuid, String blogFid) {
+    public void inviteMember(Long ownerMbNo, String inviteeMbEmail, String blogFid) {
         Blog blog = getOwnedTeamBlog(ownerMbNo, blogFid);
-        Member invitee = memberRepository.findByMbUuid(inviteeMbUuid)
+        Member invitee = memberRepository.findByMbEmail(inviteeMbEmail)
                 .orElseThrow(() -> new MemberNotFoundException("존재하지 않는 회원입니다."));
         if (invitee.getWithdrawalAt() != null) {
             throw new MemberWithdrawException("이미 탈퇴한 회원입니다.");

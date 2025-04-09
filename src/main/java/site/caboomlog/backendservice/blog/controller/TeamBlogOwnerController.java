@@ -27,19 +27,19 @@ public class TeamBlogOwnerController {
      *
      * @param blogFid 블로그의 고유 식별자
      * @param ownerMbNo 현재 요청자의 회원 번호 (헤더에서 주입됨)
-     * @param request 초대 대상자의 회원 UUID를 담은 요청 본문
+     * @param request 초대 대상자의 회원 이메일을 담은 요청 본문
      * @return 초대가 성공하면 201 CREATED 상태 코드와 함께 빈 응답 반환
-     * @throws BadRequestException {@code mbUuid}가 null이거나 비어 있는 경우
+     * @throws BadRequestException {@code mbEmail}가 null이거나 비어 있는 경우
      */
     @PostMapping("/{blogFid}/members")
     public ResponseEntity<ApiResponse<Void>> inviteMember(@PathVariable("blogFid") String blogFid,
                                                             @LoginMember Long ownerMbNo,
                                                             @RequestBody InviteMemberRequest request) {
-        if (request.getMbUuid() == null || request.getMbUuid().isBlank()) {
-            log.info(String.format("mbUuid는 null이거나 비어있을 수 없음. mbUuid: %s", request.getMbUuid()));
-            throw new BadRequestException("유효하지 않은 mbUuid입니다.");
+        if (request.getMbEmail() == null || request.getMbEmail().isBlank()) {
+            log.info(String.format("mbEmail은 null이거나 비어있을 수 없음. mbEmail: %s", request.getMbEmail()));
+            throw new BadRequestException("유효하지 않은 이메일입니다..");
         }
-        teamBlogOwnerService.inviteMember(ownerMbNo, request.getMbUuid(), blogFid);
+        teamBlogOwnerService.inviteMember(ownerMbNo, request.getMbEmail(), blogFid);
         return ResponseEntity.status(201)
                 .body(ApiResponse.created());
     }
