@@ -109,7 +109,8 @@ class BlogCommonControllerTest {
     void getBlogInfo() throws Exception {
         // given
         BlogInfoResponse blogInfoResponse = new BlogInfoResponse(
-                "공부 블로그", "공부한 내용을 정리합니다.", null);
+                "공부 블로그", "공부한 내용을 정리합니다.", null,
+                true, true, null);
         Mockito.when(blogService.getBlogInfo(anyString()))
                         .thenReturn(blogInfoResponse);
 

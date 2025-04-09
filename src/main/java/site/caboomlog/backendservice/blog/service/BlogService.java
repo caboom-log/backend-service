@@ -49,10 +49,14 @@ public class BlogService {
         if (optionalBlog.isEmpty()) {
             throw new BlogNotFoundException("존재하지 않는 블로그입니다.");
         }
+        Blog blog = optionalBlog.get();
         return new BlogInfoResponse(
-                optionalBlog.get().getBlogName(),
-                optionalBlog.get().getBlogDescription(),
-                optionalBlog.get().getBlogMainImg()
+                blog.getBlogName(),
+                blog.getBlogDescription(),
+                blog.getBlogMainImg(),
+                blog.getBlogMain(),
+                blog.getBlogPublic(),
+                blog.getCreatedAt()
         );
     }
 
