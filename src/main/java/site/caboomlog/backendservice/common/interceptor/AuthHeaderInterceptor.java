@@ -12,10 +12,11 @@ import site.caboomlog.backendservice.common.exception.UnauthorizedException;
 public class AuthHeaderInterceptor implements HandlerInterceptor {
 
     @Override
-    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
+    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
         if (request.getMethod().equalsIgnoreCase("GET") &&
                 (request.getRequestURI().matches("/api/blogs/[^/]+$") ||
-                        request.getRequestURI().matches("/api/blogs/[^/]+/members"))
+                    request.getRequestURI().matches("/api/blogs/[^/]+/members") ||
+                    request.getRequestURI().matches("/api/topics"))
         ) {
             return true;
         }

@@ -84,7 +84,7 @@ class TeamBlogOwnerServiceTest {
         // when & then
         Assertions.assertThrows(UnauthenticatedException.class,
                 () -> teamBlogOwnerService.inviteMember(testOwner.getMbNo(),
-                        testMember.getMbUuid(),
+                        testMember.getMbEmail(),
                         testBlog.getBlogFid()));
     }
 
@@ -105,7 +105,7 @@ class TeamBlogOwnerServiceTest {
         // when & then
         Assertions.assertThrows(BadRequestException.class,
                 () -> teamBlogOwnerService.inviteMember(testOwner.getMbNo(),
-                        testMember.getMbUuid(),
+                        testMember.getMbEmail(),
                         testBlog.getBlogFid()));
     }
 
@@ -126,12 +126,12 @@ class TeamBlogOwnerServiceTest {
 
         Mockito.when(blogMemberMappingRepository.findByMember_MbNoAndBlog_BlogFid(anyLong(), anyString()))
                 .thenReturn(mapping);
-        Mockito.when(memberRepository.findByMbUuid(anyString()))
+        Mockito.when(memberRepository.findByMbEmail(anyString()))
                 .thenReturn(Optional.of(member));
 
         // when & then
         Assertions.assertThrows(MemberWithdrawException.class,
-            () -> teamBlogOwnerService.inviteMember(testOwner.getMbNo(), member.getMbUuid(), testBlog.getBlogFid()));
+            () -> teamBlogOwnerService.inviteMember(testOwner.getMbNo(), member.getMbEmail(), testBlog.getBlogFid()));
     }
 
     @Test
@@ -144,14 +144,14 @@ class TeamBlogOwnerServiceTest {
 
         Mockito.when(blogMemberMappingRepository.findByMember_MbNoAndBlog_BlogFid(anyLong(), anyString()))
                 .thenReturn(mapping);
-        Mockito.when(memberRepository.findByMbUuid(anyString()))
+        Mockito.when(memberRepository.findByMbEmail(anyString()))
                 .thenReturn(Optional.of(testMember));
         Mockito.when(teamBlogInviteRepository.existsByMember_MbNoAndBlog_BlogFidAndAndStatus(anyLong(), anyString(), any()))
                 .thenReturn(true);
 
         // when & then
         Assertions.assertThrows(AlreadyInvitedException.class,
-                () -> teamBlogOwnerService.inviteMember(testOwner.getMbNo(), testMember.getMbUuid(), testBlog.getBlogFid()));
+                () -> teamBlogOwnerService.inviteMember(testOwner.getMbNo(), testMember.getMbEmail(), testBlog.getBlogFid()));
     }
 
     @Test
@@ -164,7 +164,7 @@ class TeamBlogOwnerServiceTest {
 
         Mockito.when(blogMemberMappingRepository.findByMember_MbNoAndBlog_BlogFid(anyLong(), anyString()))
                 .thenReturn(mapping);
-        Mockito.when(memberRepository.findByMbUuid(anyString()))
+        Mockito.when(memberRepository.findByMbEmail(anyString()))
                 .thenReturn(Optional.of(testMember));
         Mockito.when(teamBlogInviteRepository.existsByMember_MbNoAndBlog_BlogFidAndAndStatus(anyLong(), anyString(), any()))
                 .thenReturn(false);
@@ -173,7 +173,7 @@ class TeamBlogOwnerServiceTest {
 
         // when & then
         Assertions.assertThrows(DatabaseException.class,
-                () -> teamBlogOwnerService.inviteMember(testOwner.getMbNo(), testMember.getMbUuid(), testBlog.getBlogFid()));
+                () -> teamBlogOwnerService.inviteMember(testOwner.getMbNo(), testMember.getMbEmail(), testBlog.getBlogFid()));
     }
 
     @Test
@@ -186,7 +186,7 @@ class TeamBlogOwnerServiceTest {
 
         Mockito.when(blogMemberMappingRepository.findByMember_MbNoAndBlog_BlogFid(anyLong(), anyString()))
                 .thenReturn(mapping);
-        Mockito.when(memberRepository.findByMbUuid(anyString()))
+        Mockito.when(memberRepository.findByMbEmail(anyString()))
                 .thenReturn(Optional.of(testMember));
         Mockito.when(teamBlogInviteRepository.existsByMember_MbNoAndBlog_BlogFidAndAndStatus(anyLong(), anyString(), any()))
                 .thenReturn(false);
@@ -196,7 +196,7 @@ class TeamBlogOwnerServiceTest {
                 .thenReturn(Optional.of(testMember));
 
         // when
-        teamBlogOwnerService.inviteMember(testOwner.getMbNo(), testMember.getMbUuid(), testBlog.getBlogFid());
+        teamBlogOwnerService.inviteMember(testOwner.getMbNo(), testMember.getMbEmail(), testBlog.getBlogFid());
 
         // then
         Mockito.verify(teamBlogInviteRepository, Mockito.times(1))

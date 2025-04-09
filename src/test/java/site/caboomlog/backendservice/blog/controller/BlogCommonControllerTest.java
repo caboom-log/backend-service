@@ -19,6 +19,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import site.caboomlog.backendservice.blog.advice.BlogControllerAdvice;
 import site.caboomlog.backendservice.blog.dto.BlogInfoResponse;
+import site.caboomlog.backendservice.blog.dto.MyBlogInfoResponse;
 import site.caboomlog.backendservice.blog.exception.BlogFidDuplicatedException;
 import site.caboomlog.backendservice.blog.exception.BlogNotFoundException;
 import site.caboomlog.backendservice.blog.exception.InvalidBlogCountRangeException;
@@ -33,6 +34,7 @@ import site.caboomlog.backendservice.member.repository.MemberRepository;
 import site.caboomlog.backendservice.role.exception.RoleNotFoundException;
 
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Stream;
@@ -107,7 +109,8 @@ class BlogCommonControllerTest {
     void getBlogInfo() throws Exception {
         // given
         BlogInfoResponse blogInfoResponse = new BlogInfoResponse(
-                "공부 블로그", "공부한 내용을 정리합니다.", null);
+                "공부 블로그", "공부한 내용을 정리합니다.", null,
+                true, true, null);
         Mockito.when(blogService.getBlogInfo(anyString()))
                         .thenReturn(blogInfoResponse);
 
@@ -507,7 +510,38 @@ class BlogCommonControllerTest {
                         .characterEncoding(StandardCharsets.UTF_8)
                         .accept(MediaType.APPLICATION_JSON))
                 .andDo(print())
+                .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("SUCCESS"))
                 .andExpect(jsonPath("$.code").value(200));
+    }
+
+    @Test
+    @DisplayName("내 블로그 목록 조회 - 로그인 x")
+    void getMyBlogInfoFail_Unauthorized() throws Exception {
+        mockMvc.perform(get("/api/blogs/me"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.status").value("ERROR"));
+    }
+
+    @Test
+    @DisplayName("내 블로그 목록 조회")
+    void getMyBlogInfo() throws Exception {
+        // given
+        Mockito.when(memberRepository.findByMbUuid(anyString())).thenReturn(testMember);
+        List<MyBlogInfoResponse> response = List.of(
+                new MyBlogInfoResponse("test-fid-1", "test-name-1", "team"),
+                new MyBlogInfoResponse("test-fid-2", "test-name-2", "personal")
+        );
+        Mockito.when(blogService.getMyBlogInfo(anyLong())).thenReturn(response);
+
+        // when & then
+        mockMvc.perform(get("/api/blogs/me")
+                .header("X-Caboomlog-UID", UUID.randomUUID().toString())
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andDo(print())
+                .andExpect(jsonPath("$.content[0].blogFid").value("test-fid-1"))
+                .andExpect(jsonPath("$.content[0].blogType").value("team"))
+                .andExpect(jsonPath("$.content[1].blogType").value("personal"));
     }
 }

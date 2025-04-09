@@ -12,6 +12,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import site.caboomlog.backendservice.blog.dto.BlogInfoResponse;
 import site.caboomlog.backendservice.blog.dto.CreateBlogRequest;
 import site.caboomlog.backendservice.blog.dto.ModifyBlogInfoRequest;
+import site.caboomlog.backendservice.blog.dto.MyBlogInfoResponse;
 import site.caboomlog.backendservice.blog.entity.Blog;
 import site.caboomlog.backendservice.blog.entity.BlogType;
 import site.caboomlog.backendservice.blog.exception.InvalidBlogCountRangeException;
@@ -26,6 +27,7 @@ import site.caboomlog.backendservice.member.repository.MemberRepository;
 import site.caboomlog.backendservice.role.entity.Role;
 import site.caboomlog.backendservice.role.repository.RoleRepository;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.*;
@@ -265,5 +267,25 @@ class BlogServiceTest {
 
         // when & then
         Assertions.assertDoesNotThrow(() -> blogService.switchMainBlogTo("caboom", 1L));
+    }
+
+    @Test
+    @DisplayName("내 블로그 목록 조회")
+    void getMyBlogInfo() {
+        // given
+        List<BlogMemberMapping> mappings = List.of(
+                BlogMemberMapping.ofNewBlogMemberMapping(testBlog, testMember, roleOwner, "소유자")
+        );
+        Mockito.when(blogMemberMappingRepository.findAllByMember_MbNoAndRole_RoleId(anyLong(), anyString()))
+                .thenReturn(mappings);
+
+        // when
+        List<MyBlogInfoResponse> response = blogService.getMyBlogInfo(1L);
+
+        // then
+        Assertions.assertEquals(1, response.size());
+        Assertions.assertEquals(testBlog.getBlogFid(), response.get(0).getBlogFid());
+        Assertions.assertEquals(testBlog.getBlogName(), response.get(0).getBlogName());
+        Assertions.assertEquals(testBlog.getBlogType().name(), response.get(0).getBlogType());
     }
 }

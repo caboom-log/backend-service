@@ -94,13 +94,14 @@ class TeamBlogOwnerControllerTest {
     void inviteMemberFail_BadRequest() throws Exception {
         // given
         Mockito.when(memberRepository.findByMbUuid(anyString())).thenReturn(testMember);
+        Mockito.when(memberRepository.findByMbEmail(anyString())).thenReturn(testMember);
 
         // when & then
         mockMvc.perform(post("/api/blogs/caboom/members")
                 .header("X-Caboomlog-UID", UUID.randomUUID().toString())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
-                  {"mbUuid" :  ""}
+                  {"mbEmail" :  ""}
                  """))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value("ERROR"))
@@ -112,6 +113,7 @@ class TeamBlogOwnerControllerTest {
     void inviteMemberFail_Unauthenticated() throws Exception {
         // given
         Mockito.when(memberRepository.findByMbUuid(anyString())).thenReturn(testMember);
+        Mockito.when(memberRepository.findByMbEmail(anyString())).thenReturn(testMember);
         Mockito.doThrow(new UnauthenticatedException("블로그 소유자가 아님"))
                 .when(teamBlogOwnerService).inviteMember(anyLong(), anyString(), anyString());
 
@@ -120,8 +122,8 @@ class TeamBlogOwnerControllerTest {
                         .header("X-Caboomlog-UID", UUID.randomUUID().toString())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(String.format("""
-                          {"mbUuid" : "%s" }
-                         """, UUID.randomUUID().toString())))
+                          {"mbEmail" : "%s" }
+                         """, "test@test.com")))
                         .andExpect(status().isForbidden())
                         .andExpect(jsonPath("$.status").value("ERROR"))
                         .andDo(print());
@@ -132,6 +134,7 @@ class TeamBlogOwnerControllerTest {
     void inviteMemberFail_NotTeamBlog() throws Exception {
         // given
         Mockito.when(memberRepository.findByMbUuid(anyString())).thenReturn(testMember);
+        Mockito.when(memberRepository.findByMbEmail(anyString())).thenReturn(testMember);
         Mockito.doThrow(new BadRequestException("멤버 초대는 팀 블로그만 가능합니다."))
                 .when(teamBlogOwnerService).inviteMember(anyLong(), anyString(), anyString());
 
@@ -140,8 +143,8 @@ class TeamBlogOwnerControllerTest {
                         .header("X-Caboomlog-UID", UUID.randomUUID().toString())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(String.format("""
-                          {"mbUuid" : "%s" }
-                         """, UUID.randomUUID().toString())))
+                          {"mbEmail" : "%s" }
+                         """, "test@test.com")))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value("ERROR"))
                 .andDo(print());
@@ -152,6 +155,7 @@ class TeamBlogOwnerControllerTest {
     void inviteMemberFail_MemberNotFound() throws Exception {
         // given
         Mockito.when(memberRepository.findByMbUuid(anyString())).thenReturn(testMember);
+        Mockito.when(memberRepository.findByMbEmail(anyString())).thenReturn(testMember);
         Mockito.doThrow(new MemberNotFoundException("존재하지 않는 회원입니다."))
                 .when(teamBlogOwnerService).inviteMember(anyLong(), anyString(), anyString());
 
@@ -160,8 +164,8 @@ class TeamBlogOwnerControllerTest {
                         .header("X-Caboomlog-UID", UUID.randomUUID().toString())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(String.format("""
-                          {"mbUuid" : "%s" }
-                         """, UUID.randomUUID().toString())))
+                          {"mbEmail" : "%s" }
+                         """, "test@test.com")))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.status").value("ERROR"))
                 .andDo(print());
@@ -180,8 +184,8 @@ class TeamBlogOwnerControllerTest {
                         .header("X-Caboomlog-UID", UUID.randomUUID().toString())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(String.format("""
-                          {"mbUuid" : "%s" }
-                         """, UUID.randomUUID().toString())))
+                          {"mbEmail" : "%s" }
+                         """, "test@test.com")))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value("ERROR"))
                 .andDo(print());
@@ -192,6 +196,7 @@ class TeamBlogOwnerControllerTest {
     void inviteMemberSuccess() throws Exception {
         // given
         Mockito.when(memberRepository.findByMbUuid(anyString())).thenReturn(testMember);
+        Mockito.when(memberRepository.findByMbEmail(anyString())).thenReturn(testMember);
         Mockito.doNothing()
                 .when(teamBlogOwnerService).inviteMember(anyLong(), anyString(), anyString());
 
@@ -200,8 +205,8 @@ class TeamBlogOwnerControllerTest {
                         .header("X-Caboomlog-UID", UUID.randomUUID().toString())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(String.format("""
-                          {"mbUuid" : "%s" }
-                         """, UUID.randomUUID().toString())))
+                          {"mbEmail" : "%s" }
+                         """, "test@test.com")))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.status").value("SUCCESS"))
                 .andDo(print());
@@ -212,6 +217,7 @@ class TeamBlogOwnerControllerTest {
     void inviteMemberFail_AlreadyInvited() throws Exception {
         // given
         Mockito.when(memberRepository.findByMbUuid(anyString())).thenReturn(testMember);
+        Mockito.when(memberRepository.findByMbEmail(anyString())).thenReturn(testMember);
         Mockito.doThrow(new AlreadyInvitedException("이미 초대된 회원입니다."))
                 .when(teamBlogOwnerService).inviteMember(anyLong(), anyString(), anyString());
 
@@ -220,8 +226,8 @@ class TeamBlogOwnerControllerTest {
                         .header("X-Caboomlog-UID", UUID.randomUUID().toString())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(String.format("""
-                          {"mbUuid" : "%s" }
-                         """, UUID.randomUUID().toString())))
+                          {"mbEmail" : "%s" }
+                         """, "test@test.com")))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.status").value("ERROR"))
                 .andDo(print());

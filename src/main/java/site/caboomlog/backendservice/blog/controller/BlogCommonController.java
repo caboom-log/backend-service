@@ -7,10 +7,13 @@ import org.springframework.web.bind.annotation.*;
 import site.caboomlog.backendservice.blog.dto.BlogInfoResponse;
 import site.caboomlog.backendservice.blog.dto.CreateBlogRequest;
 import site.caboomlog.backendservice.blog.dto.ModifyBlogInfoRequest;
+import site.caboomlog.backendservice.blog.dto.MyBlogInfoResponse;
 import site.caboomlog.backendservice.blog.service.BlogService;
 import site.caboomlog.backendservice.common.annotation.LoginMember;
 import site.caboomlog.backendservice.common.dto.ApiResponse;
 import site.caboomlog.backendservice.common.exception.BadRequestException;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/blogs")
@@ -90,5 +93,20 @@ public class BlogCommonController {
         blogService.switchMainBlogTo(blogFid, mbNo);
         return ResponseEntity.ok()
                 .body(ApiResponse.ok(null));
+    }
+
+    /**
+     * 현재 로그인한 사용자의 블로그 목록을 조회합니다.
+     *
+     * <p>사용자는 최대 3개의 블로그를 생성할 수 있으며, 이 API는 해당 사용자가 '소유자(ROLE_OWNER)'로 등록된 블로그 정보를 반환합니다.</p>
+     *
+     * @param mbNo 로그인된 사용자의 회원 번호 (Argument Resolver로 주입됨)
+     * @return 사용자가 소유한 블로그 목록을 담은 응답
+     */
+    @GetMapping("/me")
+    public ResponseEntity<ApiResponse<List<MyBlogInfoResponse>>> getMyBlogInfo(@LoginMember Long mbNo) {
+        List<MyBlogInfoResponse> blogs = blogService.getMyBlogInfo(mbNo);
+        return ResponseEntity.ok()
+                .body(ApiResponse.ok(blogs));
     }
 }

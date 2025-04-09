@@ -6,6 +6,7 @@ import org.springframework.transaction.annotation.Transactional;
 import site.caboomlog.backendservice.blog.dto.BlogInfoResponse;
 import site.caboomlog.backendservice.blog.dto.CreateBlogRequest;
 import site.caboomlog.backendservice.blog.dto.ModifyBlogInfoRequest;
+import site.caboomlog.backendservice.blog.dto.MyBlogInfoResponse;
 import site.caboomlog.backendservice.blog.entity.Blog;
 import site.caboomlog.backendservice.blog.entity.BlogType;
 import site.caboomlog.backendservice.blog.exception.BlogFidDuplicatedException;
@@ -23,6 +24,7 @@ import site.caboomlog.backendservice.role.entity.Role;
 import site.caboomlog.backendservice.role.exception.RoleNotFoundException;
 import site.caboomlog.backendservice.role.repository.RoleRepository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -47,10 +49,14 @@ public class BlogService {
         if (optionalBlog.isEmpty()) {
             throw new BlogNotFoundException("존재하지 않는 블로그입니다.");
         }
+        Blog blog = optionalBlog.get();
         return new BlogInfoResponse(
-                optionalBlog.get().getBlogName(),
-                optionalBlog.get().getBlogDescription(),
-                optionalBlog.get().getBlogMainImg()
+                blog.getBlogName(),
+                blog.getBlogDescription(),
+                blog.getBlogMainImg(),
+                blog.getBlogMain(),
+                blog.getBlogPublic(),
+                blog.getCreatedAt()
         );
     }
 
@@ -223,5 +229,22 @@ public class BlogService {
      */
     private boolean hasMainBlog(Long mbNo) {
         return blogMemberMappingRepository.existsByMember_MbNoAndBlogBlogMain(mbNo, true);
+    }
+
+    /**
+     * 사용자가 소유한 블로그 목록을 조회합니다.
+     *
+     * <p>해당 사용자가 블로그 멤버 매핑 테이블에서 'ROLE_OWNER'로 등록된 블로그들을 조회하여 요약 정보를 반환합니다.</p>
+     *
+     * @param mbNo 사용자의 회원 번호
+     * @return 사용자가 소유한 블로그들의 FID와 이름 목록
+     */
+    public List<MyBlogInfoResponse> getMyBlogInfo(Long mbNo) {
+        return blogMemberMappingRepository
+                .findAllByMember_MbNoAndRole_RoleId(mbNo, "ROLE_OWNER")
+                .stream()
+                .map(info -> new MyBlogInfoResponse(
+                        info.getBlog().getBlogFid(), info.getBlog().getBlogName(), info.getBlog().getBlogType().name()))
+                .toList();
     }
 }
