@@ -1,0 +1,370 @@
+package site.caboomlog.backendservice.category.service;
+
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.*;
+import org.mockito.junit.jupiter.MockitoExtension;
+import site.caboomlog.backendservice.blog.entity.Blog;
+import site.caboomlog.backendservice.blog.entity.BlogType;
+import site.caboomlog.backendservice.blogmember.entity.BlogMemberMapping;
+import site.caboomlog.backendservice.blogmember.repository.BlogMemberMappingRepository;
+import site.caboomlog.backendservice.category.dto.CategoryResponse;
+import site.caboomlog.backendservice.category.dto.CreateCategoryRequest;
+import site.caboomlog.backendservice.category.entity.Category;
+import site.caboomlog.backendservice.category.exception.CategoryNotFoundException;
+import site.caboomlog.backendservice.category.repository.CategoryRepository;
+import site.caboomlog.backendservice.common.exception.BadRequestException;
+import site.caboomlog.backendservice.common.exception.UnauthenticatedException;
+import site.caboomlog.backendservice.member.entity.Member;
+import site.caboomlog.backendservice.role.entity.Role;
+import site.caboomlog.backendservice.topic.entity.Topic;
+import site.caboomlog.backendservice.topic.exception.TopicNotFoundException;
+import site.caboomlog.backendservice.topic.repository.TopicRepository;
+
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.util.List;
+import java.util.Optional;
+
+import static org.mockito.ArgumentMatchers.*;
+
+
+@ExtendWith(MockitoExtension.class)
+class CategoryServiceTest {
+    @Mock
+    BlogMemberMappingRepository blogMemberMappingRepository;
+    @Mock
+    TopicRepository topicRepository;
+    @Mock
+    CategoryRepository categoryRepository;
+
+    @InjectMocks
+    CategoryService categoryService;
+
+    @Captor
+    ArgumentCaptor<Category> categoryCaptor;
+
+    Member testMember = Member.ofExistingMember(1L, "caboom@test.com", "caboom",
+            "1234qwer", "010-0000-1111", null, null);
+    Blog testBlog = Blog.ofExistingBlog(1L, "caboom", true, "카붐로그",
+            "안녕하세요", true, null, BlogType.PERSONAL);
+    Role roleOwner = Role.ofNewRole("ROLE_OWNER", "블로그_소유자", "블로그 소유자 입니다.");
+    Topic testTopic = Topic.ofExsitingTopic(1, null, "여행",
+            1, null, null);
+
+    Field categoryPidField;
+    Field categoryNameField;
+    Field topicIdField;
+    Field categoryPublicField;
+
+    @BeforeEach
+    void setUp() throws Exception {
+        categoryPidField = CreateCategoryRequest.class.getDeclaredField("categoryPid");
+        categoryPidField.setAccessible(true);
+        categoryNameField = CreateCategoryRequest.class.getDeclaredField("categoryName");
+        categoryNameField.setAccessible(true);
+        topicIdField = CreateCategoryRequest.class.getDeclaredField("topicId");
+        topicIdField.setAccessible(true);
+        categoryPublicField = CreateCategoryRequest.class.getDeclaredField("categoryPublic");
+        categoryPublicField.setAccessible(true);
+    }
+
+    @Test
+    @DisplayName("카테고리 등록 실패 - 블로그 소유자가 아님")
+    void createCategoryFail_Unauthenticated() throws Exception {
+        // given
+        Constructor<CreateCategoryRequest> categoryRequestAllArgsConstructor =
+                CreateCategoryRequest.class.getDeclaredConstructor();
+        categoryRequestAllArgsConstructor.setAccessible(true);
+        CreateCategoryRequest request = categoryRequestAllArgsConstructor.newInstance();
+
+        categoryNameField.set(request, "루트카테고리");
+        topicIdField.set(request, 1);
+        categoryPublicField.set(request, true);
+
+        Mockito.when(blogMemberMappingRepository
+                .findByMember_MbNoAndBlog_BlogFid(anyLong(), anyString()))
+                .thenThrow(new UnauthenticatedException("블로그 소유자가 아닙니다."));
+
+        // when & then
+        Assertions.assertThrows(UnauthenticatedException.class,
+                () -> categoryService.createCategory("caboom", 2L, request));
+    }
+
+    @Test
+    @DisplayName("카테고리 등록 실패 - 해당 토픽이 없음")
+    void createCategoryFail_TopicNotFound() throws Exception {
+        // given
+        Constructor<CreateCategoryRequest> categoryRequestAllArgsConstructor =
+                CreateCategoryRequest.class.getDeclaredConstructor();
+        categoryRequestAllArgsConstructor.setAccessible(true);
+        CreateCategoryRequest request = categoryRequestAllArgsConstructor.newInstance();
+
+        categoryNameField.set(request, "루트카테고리");
+        topicIdField.set(request, 1);
+        categoryPublicField.set(request, true);
+
+        Mockito.when(blogMemberMappingRepository
+                        .findByMember_MbNoAndBlog_BlogFid(anyLong(), anyString()))
+                .thenReturn(BlogMemberMapping.ofNewBlogMemberMapping(
+                        testBlog, testMember, roleOwner, "블로그 소유자"
+                ));
+        Mockito.when(topicRepository.findById(anyInt()))
+                .thenReturn(Optional.empty());
+
+        // when & then
+        Assertions.assertThrows(TopicNotFoundException.class,
+                () -> categoryService.createCategory("caboom", 1L, request));
+    }
+
+    @Test
+    @DisplayName("카테고리 등록 실패 - 상위카테고리를 입력하였지만 해당 카테고리가 존재하지 않음")
+    void createCategoryFail_ParentCategoryNotFound() throws Exception {
+        // given
+        Constructor<CreateCategoryRequest> categoryRequestAllArgsConstructor =
+                CreateCategoryRequest.class.getDeclaredConstructor();
+        categoryRequestAllArgsConstructor.setAccessible(true);
+        CreateCategoryRequest request = categoryRequestAllArgsConstructor.newInstance();
+
+        categoryNameField.set(request, "루트카테고리");
+        topicIdField.set(request, 1);
+        categoryPublicField.set(request, true);
+        categoryPidField.set(request, 222L);
+
+        Mockito.when(blogMemberMappingRepository
+                        .findByMember_MbNoAndBlog_BlogFid(anyLong(), anyString()))
+                .thenReturn(BlogMemberMapping.ofNewBlogMemberMapping(
+                        testBlog, testMember, roleOwner, "블로그 소유자"
+                ));
+        Mockito.when(topicRepository.findById(anyInt()))
+                .thenReturn(Optional.of(testTopic));
+        Mockito.when(categoryRepository.findById(anyLong()))
+                .thenReturn(Optional.empty());
+
+        // when & then
+        Assertions.assertThrows(CategoryNotFoundException.class,
+                () -> categoryService.createCategory("caboom", 1L, request));
+    }
+
+    @Test
+    @DisplayName("카테고리 등록 실패 - 카테고리 최대 depth 초과")
+    void createCategoryFail_MaxDepthOver() throws Exception {
+        // given
+        Constructor<CreateCategoryRequest> categoryRequestAllArgsConstructor =
+                CreateCategoryRequest.class.getDeclaredConstructor();
+        categoryRequestAllArgsConstructor.setAccessible(true);
+        CreateCategoryRequest request = categoryRequestAllArgsConstructor.newInstance();
+
+        categoryNameField.set(request, "루트카테고리");
+        topicIdField.set(request, 1);
+        categoryPublicField.set(request, true);
+        categoryPidField.set(request, 22L);
+
+        Mockito.when(blogMemberMappingRepository
+                        .findByMember_MbNoAndBlog_BlogFid(anyLong(), anyString()))
+                .thenReturn(BlogMemberMapping.ofNewBlogMemberMapping(
+                        testBlog, testMember, roleOwner, "블로그 소유자"
+                ));
+        Mockito.when(topicRepository.findById(anyInt()))
+                .thenReturn(Optional.of(testTopic));
+        Mockito.when(categoryRepository.findById(anyLong()))
+                .thenReturn(Optional.of(
+                        Category.ofNewCategory(testBlog, null, testTopic, "depth5인 카테고리",
+                                true, 1L, 5L)
+                ));
+
+        // when & then
+        Assertions.assertThrows(BadRequestException.class,
+                () -> categoryService.createCategory("caboom", 1L, request));
+    }
+
+    @Test
+    @DisplayName("상위 카테고리가 private이고 등록할 하위 카테고리가 public이면 BadRequest")
+    void createCaetgoryFail_CreatePublicUnderPrivate() throws Exception {
+        // given
+        Constructor<CreateCategoryRequest> categoryRequestAllArgsConstructor =
+                CreateCategoryRequest.class.getDeclaredConstructor();
+        categoryRequestAllArgsConstructor.setAccessible(true);
+        CreateCategoryRequest request = categoryRequestAllArgsConstructor.newInstance();
+
+        categoryNameField.set(request, "루트카테고리");
+        topicIdField.set(request, 1);
+        categoryPublicField.set(request, true);
+        categoryPidField.set(request, 22L);
+
+        Mockito.when(blogMemberMappingRepository
+                        .findByMember_MbNoAndBlog_BlogFid(anyLong(), anyString()))
+                .thenReturn(BlogMemberMapping.ofNewBlogMemberMapping(
+                        testBlog, testMember, roleOwner, "블로그 소유자"
+                ));
+        Mockito.when(topicRepository.findById(anyInt()))
+                .thenReturn(Optional.of(testTopic));
+        Mockito.when(categoryRepository.findById(anyLong()))
+                .thenReturn(Optional.of(
+                        Category.ofNewCategory(testBlog, null, testTopic, "depth5인 카테고리",
+                                false, 1L, 5L)
+                ));
+
+        // when & then
+        Assertions.assertThrows(BadRequestException.class,
+                () -> categoryService.createCategory("caboom", 1L, request));
+    }
+
+    @Test
+    @DisplayName("root 카테고리 등록 성공")
+    void createCaetgorySuccess_root() throws Exception {
+        // given
+        Constructor<CreateCategoryRequest> categoryRequestAllArgsConstructor =
+                CreateCategoryRequest.class.getDeclaredConstructor();
+        categoryRequestAllArgsConstructor.setAccessible(true);
+        CreateCategoryRequest request = categoryRequestAllArgsConstructor.newInstance();
+
+        categoryNameField.set(request, "루트카테고리");
+        topicIdField.set(request, 1);
+        categoryPublicField.set(request, true);
+
+        Mockito.when(blogMemberMappingRepository
+                        .findByMember_MbNoAndBlog_BlogFid(anyLong(), anyString()))
+                .thenReturn(BlogMemberMapping.ofNewBlogMemberMapping(
+                        testBlog, testMember, roleOwner, "블로그 소유자"
+                ));
+        Mockito.when(topicRepository.findById(anyInt()))
+                .thenReturn(Optional.of(testTopic));
+        Mockito.when(categoryRepository.countByBlog_BlogFidAndParentCategory(anyString(), any()))
+                .thenReturn(3L);
+
+        // when
+        categoryService.createCategory("caboom", 1L, request);
+
+        // then
+        Mockito.verify(categoryRepository).save(categoryCaptor.capture());
+        Category saved = categoryCaptor.getValue();
+
+        Assertions.assertEquals("루트카테고리", saved.getCategoryName());
+        Assertions.assertEquals(4L, saved.getCategoryOrder());
+        Assertions.assertEquals(1L, saved.getDepth());
+        Assertions.assertNull(saved.getParentCategory());
+        Assertions.assertTrue(saved.getCategoryPublic());
+    }
+
+    @Test
+    @DisplayName("sub 카테고리 등록 성공")
+    void createCaetgorySuccess_sub() throws Exception {
+        // given
+        Constructor<CreateCategoryRequest> categoryRequestAllArgsConstructor =
+                CreateCategoryRequest.class.getDeclaredConstructor();
+        categoryRequestAllArgsConstructor.setAccessible(true);
+        CreateCategoryRequest request = categoryRequestAllArgsConstructor.newInstance();
+        Category parent = Category.ofNewCategory(testBlog, null, testTopic, "부모",
+                true, 1L, 2L);
+
+        categoryNameField.set(request, "서브카테고리");
+        topicIdField.set(request, 1);
+        categoryPublicField.set(request, true);
+        categoryPidField.set(request, 1L);
+
+        Mockito.when(blogMemberMappingRepository
+                        .findByMember_MbNoAndBlog_BlogFid(anyLong(), anyString()))
+                .thenReturn(BlogMemberMapping.ofNewBlogMemberMapping(
+                        testBlog, testMember, roleOwner, "블로그 소유자"
+                ));
+        Mockito.when(topicRepository.findById(anyInt()))
+                .thenReturn(Optional.of(testTopic));
+        Mockito.when(categoryRepository.findById(anyLong()))
+                        .thenReturn(Optional.of(parent));
+
+        // when
+        categoryService.createCategory("caboom", 1L, request);
+
+        // then
+        Mockito.verify(categoryRepository).save(categoryCaptor.capture());
+        Category saved = categoryCaptor.getValue();
+
+        Assertions.assertEquals("서브카테고리", saved.getCategoryName());
+        Assertions.assertEquals(1L, saved.getCategoryOrder());
+        Assertions.assertEquals(3L, saved.getDepth());
+        Assertions.assertEquals(parent, saved.getParentCategory());
+        Assertions.assertTrue(saved.getCategoryPublic());
+    }
+
+    @Test
+    @DisplayName("카테고리 전체 조회 실패 - 블로그 소유자가 아님")
+    void getCategoriesFail_Unauthenticated() {
+        // given
+        Mockito.when(blogMemberMappingRepository.findByMember_MbNoAndBlog_BlogFid(anyLong(), anyString()))
+                .thenReturn(BlogMemberMapping.ofNewBlogMemberMapping(
+                        testBlog, testMember, Role.ofNewRole("ROLE_MEMBER", "블로그_멤버", ""),
+                        "멤버1"
+        ));
+
+        // when & then
+        Assertions.assertThrows(UnauthenticatedException.class,
+                () -> categoryService.getCategories("caboom", 2L));
+    }
+
+    @Test
+    @DisplayName("카테고리 전체 조회 성공")
+    void getCategories() {
+        // given
+        Mockito.when(blogMemberMappingRepository.findByMember_MbNoAndBlog_BlogFid(anyLong(), anyString()))
+                .thenReturn(BlogMemberMapping.ofNewBlogMemberMapping(
+                        testBlog, testMember, roleOwner, "멤버1"));
+        Mockito.when(categoryRepository.findAllByBlog_BlogFid(anyString()))
+                .thenReturn(List.of(
+                        Category.ofNewCategory(testBlog, null, testTopic,
+                                "root", true, 1L, 1L)
+        ));
+        // when
+        List<CategoryResponse> response = categoryService.getCategories("caboom", 2L);
+
+        // then
+        Assertions.assertEquals(1, response.size());
+    }
+
+    @DisplayName("공개 카테고리 전체 조회 성공 - 트리 구조로 리턴")
+    @Test
+    void getPublicCategoriesSuccess() throws Exception {
+        // given
+        Category root1 = Category.ofNewCategory(testBlog, null, testTopic,
+                "루트1", true, 1L, 1L);
+        Category root2 = Category.ofNewCategory(testBlog, null, testTopic,
+                "루트2", true, 2L, 1L);
+
+        Category sub1_1 = Category.ofNewCategory(testBlog, root1, testTopic,
+                "서브1-1", true, 1L, 2L);
+        Category sub1_2 = Category.ofNewCategory(testBlog, root1, testTopic,
+                "서브1-2", true, 2L, 2L);
+        Category sub2_1 = Category.ofNewCategory(testBlog, root2, testTopic,
+                "서브2-1", true, 1L, 2L);
+
+        Field categoryIdField = Category.class.getDeclaredField("categoryId");
+        categoryIdField.setAccessible(true);
+        categoryIdField.set(root1, 1L);
+        categoryIdField.set(root2, 2L);
+        categoryIdField.set(sub1_1, 3L);
+        categoryIdField.set(sub1_2, 4L);
+        categoryIdField.set(sub2_1, 5L);
+
+        Mockito.when(categoryRepository.findAllPublicByBlog_BlogFid(anyString()))
+                .thenReturn(List.of(root1, root2, sub1_1, sub1_2, sub2_1));
+
+        // when
+        List<CategoryResponse> response = categoryService.getAllPublicCategories("caboom");
+
+        // then
+        Assertions.assertEquals(2, response.size());
+
+        CategoryResponse r1 = response.get(0);
+        Assertions.assertEquals("루트1", r1.getCategoryName());
+        Assertions.assertEquals(2, r1.getChildren().size());
+        Assertions.assertEquals("서브1-1", r1.getChildren().get(0).getCategoryName());
+
+        CategoryResponse r2 = response.get(1);
+        Assertions.assertEquals("루트2", r2.getCategoryName());
+        Assertions.assertEquals(1, r2.getChildren().size());
+        Assertions.assertEquals("서브2-1", r2.getChildren().get(0).getCategoryName());
+    }
+}
