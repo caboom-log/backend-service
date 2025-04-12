@@ -45,11 +45,9 @@ public class CategoryService {
     @Transactional
     public void createCategory(String blogFid, Long mbNo, CreateCategoryRequest request) {
 
-        BlogMemberMapping ownerMapping = blogMemberMappingRepository.findByMember_MbNoAndBlog_BlogFid(mbNo, blogFid);
-        if (!"ROLE_OWNER".equalsIgnoreCase(ownerMapping.getRole().getRoleId())) {
-            throw new UnauthenticatedException("블로그 소유자가 아닙니다.");
-        }
-        Blog blog = ownerMapping.getBlog();
+        verifyIfBlogOwner(blogFid, mbNo);
+        Blog blog = blogMemberMappingRepository.findByMember_MbNoAndBlog_BlogFid(mbNo, blogFid)
+                .getBlog();
 
         Optional<Topic> optionalTopic = topicRepository.findById(request.getTopicId());
         if (optionalTopic.isEmpty()) {
@@ -99,10 +97,7 @@ public class CategoryService {
      */
     @Transactional(readOnly = true)
     public List<CategoryResponse> getCategories(String blogFid, Long mbNo) {
-        BlogMemberMapping ownerMapping = blogMemberMappingRepository.findByMember_MbNoAndBlog_BlogFid(mbNo, blogFid);
-        if (!"ROLE_OWNER".equalsIgnoreCase(ownerMapping.getRole().getRoleId())) {
-            throw new UnauthenticatedException("블로그 소유자가 아닙니다.");
-        }
+        verifyIfBlogOwner(blogFid, mbNo);
 
         List<Category> categories = categoryRepository.findAllByBlog_BlogFid(blogFid);
 
@@ -144,15 +139,8 @@ public class CategoryService {
      */
     @Transactional
     public void changeVisibility(Long mbNo, String blogFid, Long categoryId, boolean categoryPublic) {
-        BlogMemberMapping ownerMapping = blogMemberMappingRepository.findByMember_MbNoAndBlog_BlogFid(mbNo, blogFid);
-        if (!"ROLE_OWNER".equalsIgnoreCase(ownerMapping.getRole().getRoleId())) {
-            throw new UnauthenticatedException("블로그 소유자가 아닙니다.");
-        }
-        Category category = categoryRepository.findByCategoryId(categoryId)
-                .orElseThrow(() -> new CategoryNotFoundException("카테고리가 존재하지 않습니다."));
-        if (!blogFid.equals(category.getBlog().getBlogFid())) {
-            throw new BadRequestException("카테고리가 해당 블로그 소속이 아닙니다.");
-        }
+        verifyIfBlogOwner(blogFid, mbNo);
+        Category category = validateCategoryBelongsToBlogAndGet(blogFid, categoryId);
         if (categoryPublic) {
             category.changeVisibility(categoryPublic);
             categoryRepository.save(category);
@@ -164,6 +152,48 @@ public class CategoryService {
                 categoryRepository.save(c);
             }
         }
+    }
+
+    /**
+     * 두 카테고리의 정렬 순서를 서로 교환합니다.
+     * <p>
+     * 블로그 소유자 검증을 수행하고, 두 카테고리가 동일한 depth에 있는 경우에만 순서를 교환합니다.
+     * </p>
+     *
+     * @param blogFid 블로그 식별자
+     * @param mbNo 로그인한 사용자 회원 번호
+     * @param categoryId1 첫 번째 카테고리 ID
+     * @param categoryId2 두 번째 카테고리 ID
+     * @throws UnauthenticatedException 사용자가 블로그 소유자가 아닐 경우
+     * @throws CategoryNotFoundException 존재하지 않는 카테고리인 경우
+     * @throws BadRequestException 다른 블로그의 카테고리이거나 depth가 일치하지 않는 경우
+     */
+    public void switchOrder(String blogFid, Long mbNo, Long categoryId1, Long categoryId2) {
+        verifyIfBlogOwner(blogFid, mbNo);
+        Category category1 = validateCategoryBelongsToBlogAndGet(blogFid, categoryId1);
+        Category category2 = validateCategoryBelongsToBlogAndGet(blogFid, categoryId2);
+        if (!Objects.equals(category1.getDepth(), category2.getDepth())) {
+            throw new BadRequestException("카테고리 정렬 순서는 같은 레벨끼리만 바꿀 수 있습니다.");
+        }
+        Category.switchOrder(category1, category2);
+    }
+
+    /**
+     * 카테고리가 지정된 블로그에 소속되어 있는지 검증하고 반환합니다.
+     *
+     * @param blogFid 블로그 식별자
+     * @param categoryId 검증할 카테고리 ID
+     * @return 검증된 Category 엔티티
+     * @throws CategoryNotFoundException 카테고리가 존재하지 않는 경우
+     * @throws BadRequestException 카테고리가 해당 블로그에 소속되지 않은 경우
+     */
+    private Category validateCategoryBelongsToBlogAndGet(String blogFid, Long categoryId) {
+        Category category = categoryRepository.findByCategoryId(categoryId)
+                .orElseThrow(() -> new CategoryNotFoundException("카테고리가 존재하지 않습니다."));
+        if (!blogFid.equals(category.getBlog().getBlogFid())) {
+            throw new BadRequestException("카테고리가 해당 블로그 소속이 아닙니다.");
+        }
+        return category;
     }
 
     /**
@@ -224,4 +254,21 @@ public class CategoryService {
         return rootList;
     }
 
+    /**
+     * 주어진 사용자(mbNo)가 해당 블로그(blogFid)의 소유자인지 검증합니다.
+     * <p>
+     * 블로그 멤버 매핑 정보를 조회하여 사용자에게 'ROLE_OWNER' 권한이 없을 경우
+     * {@link UnauthenticatedException} 예외를 발생시킵니다.
+     * </p>
+     *
+     * @param blogFid 블로그 식별자(FID)
+     * @param mbNo    사용자 회원 번호
+     * @throws UnauthenticatedException 사용자가 해당 블로그의 소유자가 아닌 경우
+     */
+    private void verifyIfBlogOwner(String blogFid, Long mbNo) {
+        BlogMemberMapping ownerMapping = blogMemberMappingRepository.findByMember_MbNoAndBlog_BlogFid(mbNo, blogFid);
+        if (!"ROLE_OWNER".equalsIgnoreCase(ownerMapping.getRole().getRoleId())) {
+            throw new UnauthenticatedException("블로그 소유자가 아닙니다.");
+        }
+    }
 }

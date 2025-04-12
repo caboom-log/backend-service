@@ -6,9 +6,11 @@ import org.springframework.web.bind.annotation.*;
 import site.caboomlog.backendservice.category.dto.CategoryResponse;
 import site.caboomlog.backendservice.category.dto.ChangeVisibilityRequest;
 import site.caboomlog.backendservice.category.dto.CreateCategoryRequest;
+import site.caboomlog.backendservice.category.dto.SwitchOrderRequest;
 import site.caboomlog.backendservice.category.service.CategoryService;
 import site.caboomlog.backendservice.common.annotation.LoginMember;
 import site.caboomlog.backendservice.common.dto.ApiResponse;
+import site.caboomlog.backendservice.common.exception.BadRequestException;
 
 import java.util.List;
 
@@ -85,6 +87,33 @@ public class CategoryController {
                                                               @LoginMember Long ownerMbNo,
                                                               @RequestBody ChangeVisibilityRequest request) {
         categoryService.changeVisibility(ownerMbNo, blogFid, categoryId, request.isCategoryPublic());
+        return ResponseEntity.ok()
+                .body(ApiResponse.ok(null));
+    }
+
+    /**
+     * 두 카테고리의 정렬 순서를 서로 교환합니다.
+     * <p>
+     * 요청한 사용자가 해당 블로그의 소유자인지 검증하고,
+     * 동일한 깊이(depth)를 가진 두 카테고리의 정렬 순서를 바꿉니다.
+     * </p>
+     *
+     * @param blogFid 블로그 식별자 (PathVariable)
+     * @param ownerMbNo 로그인한 사용자 회원 번호 (LoginMember)
+     * @param request categoryId1과 categoryId2가 포함된 정렬 순서 교환 요청 객체
+     * @return 200 OK 응답
+     * @throws BadRequestException categoryId가 잘못되었거나, 다른 depth의 카테고리일 경우
+     */
+    @PutMapping("/orders")
+    public ResponseEntity<ApiResponse<Void>> switchOrder(@PathVariable("blogFid") String blogFid,
+                                                         @LoginMember Long ownerMbNo,
+                                                         @RequestBody SwitchOrderRequest request) {
+        if (request.getCategoryId1() == null || request.getCategoryId1() < 0 ||
+        request.getCategoryId2() == null || request.getCategoryId2() < 0) {
+            throw new BadRequestException("categoryId가 잘못되었습니다.");
+        }
+        categoryService.switchOrder(blogFid, ownerMbNo,
+                request.getCategoryId1(), request.getCategoryId2());
         return ResponseEntity.ok()
                 .body(ApiResponse.ok(null));
     }

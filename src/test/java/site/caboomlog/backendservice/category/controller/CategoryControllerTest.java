@@ -37,8 +37,7 @@ import java.util.UUID;
 
 import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.ArgumentMatchers.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -371,4 +370,59 @@ class CategoryControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("SUCCESS"));
     }
+
+    @Test
+    @DisplayName("카테고리 정렬 순서 변경 실패 - 블로그 소유자가 아님")
+    void switchOrderFail_Unauthenticated() throws Exception {
+        // given
+        Mockito.when(memberRepository.findByMbUuid(anyString())).thenReturn(Optional.of(testMember));
+        Mockito.doThrow(UnauthenticatedException.class)
+                .when(categoryService).switchOrder(anyString(), anyLong(), anyLong(), anyLong());
+
+        // when & then
+        mockMvc.perform(put("/api/blogs/caboom/categories/orders")
+                        .header("X-Caboomlog-UID", UUID.randomUUID().toString())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"categoryId1\" : 1, \"categoryId2\" :  2}"))
+                .andDo(print())
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.status").value("ERROR"));
+    }
+
+    @Test
+    @DisplayName("카테고리 정렬 순서 변경 실패 - 잘못된 요청")
+    void switchOrderFail_BadRequest() throws Exception {
+        // given
+        Mockito.when(memberRepository.findByMbUuid(anyString())).thenReturn(Optional.of(testMember));
+        Mockito.doThrow(BadRequestException.class)
+                .when(categoryService).switchOrder(anyString(), anyLong(), anyLong(), anyLong());
+
+        // when & then
+        mockMvc.perform(put("/api/blogs/caboom/categories/orders")
+                        .header("X-Caboomlog-UID", UUID.randomUUID().toString())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"categoryId1\" : 1, \"categoryId2\" :  2}"))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value("ERROR"));
+    }
+
+    @Test
+    @DisplayName("카테고리 정렬 순서 변경 성공")
+    void switchOrderSuccess() throws Exception {
+        // given
+        Mockito.when(memberRepository.findByMbUuid(anyString())).thenReturn(Optional.of(testMember));
+        Mockito.doNothing()
+                .when(categoryService).switchOrder(anyString(), anyLong(), anyLong(), anyLong());
+
+        // when & then
+        mockMvc.perform(put("/api/blogs/caboom/categories/orders")
+                        .header("X-Caboomlog-UID", UUID.randomUUID().toString())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"categoryId1\" : 1, \"categoryId2\" :  2}"))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("SUCCESS"));
+    }
+
 }

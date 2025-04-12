@@ -497,7 +497,7 @@ class CategoryServiceTest {
         categoryIdField.set(child1, 2L);
         categoryIdField.set(child2, 3L);
         Mockito.when(blogMemberMappingRepository.findByMember_MbNoAndBlog_BlogFid(anyLong(), anyString()))
-                .thenReturn(BlogMemberMapping.ofNewBlogMemberMapping(testBlog, testMember, roleOwner, "멤버"));
+                .thenReturn(BlogMemberMapping.ofNewBlogMemberMapping(testBlog, testMember, roleOwner, "소유자"));
         Mockito.when(categoryRepository.findByCategoryId(anyLong()))
                 .thenReturn(Optional.of(parent));
 
@@ -511,5 +511,44 @@ class CategoryServiceTest {
         Assertions.assertFalse(child2.getCategoryPublic());
         Mockito.verify(categoryRepository, Mockito.times(1)).save(any(Category.class));
         Mockito.verify(categoryRepository, Mockito.times(0)).findAllByBlog_BlogFid(anyString());
+    }
+
+    @Test
+    @DisplayName("카테고리 순서 변경 실패 - 서로 다른 depth의 카테고리")
+    void switchOrderFail_DifferentDepth() {
+        // given
+        Category category1 = Category.ofNewCategory(testBlog, null, testTopic, "루트",
+                true, 1, 1);
+        Category category2 = Category.ofNewCategory(testBlog, category1, testTopic, "서브",
+                true, 1, 2);
+        Mockito.when(blogMemberMappingRepository.findByMember_MbNoAndBlog_BlogFid(anyLong(), anyString()))
+                .thenReturn(BlogMemberMapping.ofNewBlogMemberMapping(testBlog, testMember, roleOwner, "소유자"));
+        Mockito.when(categoryRepository.findByCategoryId(1L)).thenReturn(Optional.of(category1));
+        Mockito.when(categoryRepository.findByCategoryId(2L)).thenReturn(Optional.of(category2));
+
+        // when & then
+        Assertions.assertThrows(BadRequestException.class,
+                () -> categoryService.switchOrder("caboom", 1L, 1L, 2L));
+    }
+
+    @Test
+    @DisplayName("카테고리 순서 변경 성공")
+    void switchOrderSuccess() {
+        // given
+        Category category1 = Category.ofNewCategory(testBlog, null, testTopic, "루트1",
+                true, 1, 1);
+        Category category2 = Category.ofNewCategory(testBlog, category1, testTopic, "루트2",
+                true, 2, 1);
+        Mockito.when(blogMemberMappingRepository.findByMember_MbNoAndBlog_BlogFid(anyLong(), anyString()))
+                .thenReturn(BlogMemberMapping.ofNewBlogMemberMapping(testBlog, testMember, roleOwner, "소유자"));
+        Mockito.when(categoryRepository.findByCategoryId(1L)).thenReturn(Optional.of(category1));
+        Mockito.when(categoryRepository.findByCategoryId(2L)).thenReturn(Optional.of(category2));
+
+        // when
+        categoryService.switchOrder("caboom", 1L, 1L, 2L);
+
+        // then
+        Assertions.assertEquals(2, category1.getCategoryOrder());
+        Assertions.assertEquals(1, category2.getCategoryOrder());
     }
 }
