@@ -243,11 +243,11 @@ class CategoryControllerTest {
     void getAllCategoriesSuccess() throws Exception {
         // given
         Category rootCategory1 = Category.ofNewCategory(testBlog, null, testTopic,
-                "루트카테고리1", true, 1L, 1L);
+                "루트카테고리1", true, 1, 1);
         Category subCategory1 = Category.ofNewCategory(testBlog, rootCategory1, testTopic,
-                "서브카테고리1", false, 1L, 2L);
+                "서브카테고리1", false, 1, 2);
         Category subCategory2 = Category.ofNewCategory(testBlog, rootCategory1, testTopic,
-                "서브카테고리2", true, 2L, 2L);
+                "서브카테고리2", true, 2, 2);
 
         CategoryResponse root = new CategoryResponse(rootCategory1);
         root.getChildren().add(new CategoryResponse(subCategory1));
@@ -276,11 +276,11 @@ class CategoryControllerTest {
     void getAllPublicCategories() throws Exception {
         // given
         Category rootCategory1 = Category.ofNewCategory(testBlog, null, testTopic,
-                "루트카테고리1", true, 1L, 1L);
+                "루트카테고리1", true, 1, 1);
         Category subPrivateCategory = Category.ofNewCategory(testBlog, rootCategory1, testTopic,
-                "서브카테고리1", false, 1L, 2L);
+                "서브카테고리1", false, 1, 2);
         Category subPublicCategory = Category.ofNewCategory(testBlog, rootCategory1, testTopic,
-                "서브카테고리2", true, 2L, 2L);
+                "서브카테고리2", true, 2, 2);
         CategoryResponse root = new CategoryResponse(rootCategory1);
         root.getChildren().add(new CategoryResponse(subPublicCategory));
 

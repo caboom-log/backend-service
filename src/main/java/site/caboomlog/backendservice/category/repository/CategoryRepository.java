@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Optional;
 
 public interface CategoryRepository extends JpaRepository<Category, Long> {
-    long countByBlog_BlogFidAndParentCategory(String blogFid, Category parent);
+    int countByBlog_BlogFidAndParentCategory(String blogFid, Category parent);
 
     @Query("SELECT c FROM Category c JOIN FETCH c.topic WHERE c.blog.blogFid = ?1 ORDER BY c.categoryOrder ASC")
     List<Category> findAllByBlog_BlogFid(String blogFid);

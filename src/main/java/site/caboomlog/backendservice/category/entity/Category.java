@@ -41,10 +41,10 @@ public class Category {
     private Boolean categoryPublic;
 
     @Column(name = "category_order")
-    private Long categoryOrder;
+    private Integer categoryOrder;
 
     @Column(name = "depth")
-    private Long depth;
+    private Integer depth;
 
     @Column(name = "created_at")
     @CreationTimestamp
@@ -56,8 +56,8 @@ public class Category {
     protected Category(){}
 
     private Category(Long categoryId, Blog blog, Category parentCategory, Topic topic,
-                     String categoryName, Boolean categoryPublic, Long categoryOrder,
-                     Long depth, LocalDateTime createdAt, LocalDateTime updatedAt) {
+                     String categoryName, Boolean categoryPublic, Integer categoryOrder,
+                     Integer depth, LocalDateTime createdAt, LocalDateTime updatedAt) {
         this.categoryId = categoryId;
         this.blog = blog;
         this.parentCategory = parentCategory;
@@ -71,8 +71,8 @@ public class Category {
     }
 
     public static Category ofNewCategory(Blog blog, Category parentCategory, Topic topic,
-                                         String categoryName, Boolean categoryPublic, Long categoryOrder,
-                                         Long depth) {
+                                         String categoryName, Boolean categoryPublic, Integer categoryOrder,
+                                         Integer depth) {
         return new Category(null, blog, parentCategory, topic,
                 categoryName, categoryPublic, categoryOrder, depth, null, null);
     }
@@ -87,7 +87,7 @@ public class Category {
     }
 
     public static void switchOrder(Category category1, Category category2) {
-        long order = category1.getCategoryOrder();
+        int order = category1.getCategoryOrder();
         category1.categoryOrder = category2.getCategoryOrder();
         category2.categoryOrder = order;
     }

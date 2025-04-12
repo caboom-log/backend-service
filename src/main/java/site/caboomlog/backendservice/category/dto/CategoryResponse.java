@@ -16,7 +16,7 @@ public class CategoryResponse {
     private Long categoryId;
     private String categoryName;
     private Boolean categoryPublic;
-    private Long depth;
+    private Integer depth;
     private String topicName;
     private List<CategoryResponse> children = new ArrayList<>();
 

@@ -57,8 +57,8 @@ public class CategoryService {
         }
         Topic topic = optionalTopic.get();
 
-        long newCategoryOrder = 0;
-        long depth = 1;
+        int newCategoryOrder = 0;
+        int depth = 1;
         Category parent = null;
 
         if (request.getCategoryPid() != null) {

@@ -173,7 +173,7 @@ class CategoryServiceTest {
         Mockito.when(categoryRepository.findById(anyLong()))
                 .thenReturn(Optional.of(
                         Category.ofNewCategory(testBlog, null, testTopic, "depth5인 카테고리",
-                                true, 1L, 5L)
+                                true, 1, 5)
                 ));
 
         // when & then
@@ -205,7 +205,7 @@ class CategoryServiceTest {
         Mockito.when(categoryRepository.findById(anyLong()))
                 .thenReturn(Optional.of(
                         Category.ofNewCategory(testBlog, null, testTopic, "depth5인 카테고리",
-                                false, 1L, 5L)
+                                false, 1, 5)
                 ));
 
         // when & then
@@ -234,7 +234,7 @@ class CategoryServiceTest {
         Mockito.when(topicRepository.findById(anyInt()))
                 .thenReturn(Optional.of(testTopic));
         Mockito.when(categoryRepository.countByBlog_BlogFidAndParentCategory(anyString(), any()))
-                .thenReturn(3L);
+                .thenReturn(3);
 
         // when
         categoryService.createCategory("caboom", 1L, request);
@@ -244,8 +244,8 @@ class CategoryServiceTest {
         Category saved = categoryCaptor.getValue();
 
         Assertions.assertEquals("루트카테고리", saved.getCategoryName());
-        Assertions.assertEquals(4L, saved.getCategoryOrder());
-        Assertions.assertEquals(1L, saved.getDepth());
+        Assertions.assertEquals(4, saved.getCategoryOrder());
+        Assertions.assertEquals(1, saved.getDepth());
         Assertions.assertNull(saved.getParentCategory());
         Assertions.assertTrue(saved.getCategoryPublic());
     }
@@ -259,7 +259,7 @@ class CategoryServiceTest {
         categoryRequestAllArgsConstructor.setAccessible(true);
         CreateCategoryRequest request = categoryRequestAllArgsConstructor.newInstance();
         Category parent = Category.ofNewCategory(testBlog, null, testTopic, "부모",
-                true, 1L, 2L);
+                true, 1, 2);
 
         categoryNameField.set(request, "서브카테고리");
         topicIdField.set(request, 1);
@@ -284,8 +284,8 @@ class CategoryServiceTest {
         Category saved = categoryCaptor.getValue();
 
         Assertions.assertEquals("서브카테고리", saved.getCategoryName());
-        Assertions.assertEquals(1L, saved.getCategoryOrder());
-        Assertions.assertEquals(3L, saved.getDepth());
+        Assertions.assertEquals(1, saved.getCategoryOrder());
+        Assertions.assertEquals(3, saved.getDepth());
         Assertions.assertEquals(parent, saved.getParentCategory());
         Assertions.assertTrue(saved.getCategoryPublic());
     }
@@ -315,7 +315,7 @@ class CategoryServiceTest {
         Mockito.when(categoryRepository.findAllByBlog_BlogFid(anyString()))
                 .thenReturn(List.of(
                         Category.ofNewCategory(testBlog, null, testTopic,
-                                "root", true, 1L, 1L)
+                                "root", true, 1, 1)
         ));
         // when
         List<CategoryResponse> response = categoryService.getCategories("caboom", 2L);
@@ -329,16 +329,16 @@ class CategoryServiceTest {
     void getPublicCategoriesSuccess() throws Exception {
         // given
         Category root1 = Category.ofNewCategory(testBlog, null, testTopic,
-                "루트1", true, 1L, 1L);
+                "루트1", true, 1, 1);
         Category root2 = Category.ofNewCategory(testBlog, null, testTopic,
-                "루트2", true, 2L, 1L);
+                "루트2", true, 2, 1);
 
         Category sub1_1 = Category.ofNewCategory(testBlog, root1, testTopic,
-                "서브1-1", true, 1L, 2L);
+                "서브1-1", true, 1, 2);
         Category sub1_2 = Category.ofNewCategory(testBlog, root1, testTopic,
-                "서브1-2", true, 2L, 2L);
+                "서브1-2", true, 2, 2);
         Category sub2_1 = Category.ofNewCategory(testBlog, root2, testTopic,
-                "서브2-1", true, 1L, 2L);
+                "서브2-1", true, 1, 2);
 
         Field categoryIdField = Category.class.getDeclaredField("categoryId");
         categoryIdField.setAccessible(true);
@@ -395,7 +395,7 @@ class CategoryServiceTest {
                         Blog.ofNewBlog("다른블로그", true, "다른블로그", null,
                                 false, BlogType.PERSONAL),
                         null, testTopic, "카테고리!", true,
-                        1L, 1L)));
+                        1, 1)));
 
         // when & then
         Assertions.assertThrows(BadRequestException.class,
@@ -410,7 +410,7 @@ class CategoryServiceTest {
                 .thenReturn(BlogMemberMapping.ofNewBlogMemberMapping(testBlog, testMember, roleOwner, "멤버"));
         Mockito.when(categoryRepository.findByCategoryId(anyLong()))
                 .thenReturn(Optional.of(Category.ofNewCategory(testBlog, null, testTopic,
-                        "카테고리!", false, 1L, 1L)));
+                        "카테고리!", false, 1, 1)));
 
         // when
         categoryService.changeVisibility(1L, "caboom", 1L, true);
@@ -426,11 +426,11 @@ class CategoryServiceTest {
     void changeVisibilitySuccess_childrenPrivate() throws Exception {
         // given
         Category parent = Category.ofNewCategory(testBlog, null, testTopic, "루트1",
-                true, 1L, 1L);
+                true, 1, 1);
         Category child1 = Category.ofNewCategory(testBlog, parent, testTopic, "자식1",
-                true, 1L, 2L);
+                true, 1, 2);
         Category child2 = Category.ofNewCategory(testBlog, parent, testTopic, "자식2",
-                true, 2L, 2L);
+                true, 2, 2);
         Field categoryIdField = Category.class.getDeclaredField("categoryId");
         categoryIdField.setAccessible(true);
         categoryIdField.set(parent, 1L);
@@ -458,11 +458,11 @@ class CategoryServiceTest {
     void changeVisibilitySuccess_parentPublic() throws Exception {
         // given
         Category parent = Category.ofNewCategory(testBlog, null, testTopic, "루트1",
-                false, 1L, 1L);
+                false, 1, 1);
         Category child1 = Category.ofNewCategory(testBlog, parent, testTopic, "자식1",
-                false, 1L, 2L);
+                false, 1, 2);
         Category child2 = Category.ofNewCategory(testBlog, parent, testTopic, "자식2",
-                false, 2L, 2L);
+                false, 2, 2);
         Field categoryIdField = Category.class.getDeclaredField("categoryId");
         categoryIdField.setAccessible(true);
         categoryIdField.set(parent, 1L);
