@@ -57,6 +57,10 @@ public class CategoryService {
         }
         Topic topic = optionalTopic.get();
 
+        if (categoryRepository.countByBlog_BlogFid(blogFid) >= 200) {
+            throw new BadRequestException("카테고리는 최대 200개까지만 생성 가능합니다.");
+        }
+
         int newCategoryOrder = 0;
         int depth = 1;
         Category parent = null;

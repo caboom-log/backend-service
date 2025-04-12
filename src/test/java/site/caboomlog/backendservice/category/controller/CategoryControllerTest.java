@@ -154,11 +154,11 @@ class CategoryControllerTest {
     }
 
     @Test
-    @DisplayName("카테고리 등록 실패 - 최대 depth 초과 or 비공개 카테고리 하위에 공개카테고리 등록 시도")
+    @DisplayName("카테고리 등록 실패 - 최대 depth 초과 or 비공개 카테고리 하위에 공개카테고리 등록 시도 or 카테고리 최대 갯수 초과")
     void createCategoryFail_DepthIsMax() throws Exception {
         // given
         Mockito.when(memberRepository.findByMbUuid(anyString())).thenReturn(Optional.of(testMember));
-        Mockito.doThrow(new BadRequestException("depth는 최대 5까지만 가능합니다"))
+        Mockito.doThrow(new BadRequestException("잘못된 요청"))
                 .when(categoryService).createCategory(anyString(), anyLong(), any());
 
         // when & then

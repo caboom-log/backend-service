@@ -182,6 +182,34 @@ class CategoryServiceTest {
     }
 
     @Test
+    @DisplayName("카테고리 등록 실패 - 카테고리 최대 갯수 초과")
+    void createCategoryFail_MaxCountOver() throws Exception {
+        // given
+        Constructor<CreateCategoryRequest> categoryRequestAllArgsConstructor =
+                CreateCategoryRequest.class.getDeclaredConstructor();
+        categoryRequestAllArgsConstructor.setAccessible(true);
+        CreateCategoryRequest request = categoryRequestAllArgsConstructor.newInstance();
+
+        categoryNameField.set(request, "루트카테고리");
+        topicIdField.set(request, 1);
+        categoryPublicField.set(request, true);
+        categoryPidField.set(request, 22L);
+
+        Mockito.when(blogMemberMappingRepository
+                        .findByMember_MbNoAndBlog_BlogFid(anyLong(), anyString()))
+                .thenReturn(BlogMemberMapping.ofNewBlogMemberMapping(
+                        testBlog, testMember, roleOwner, "블로그 소유자"
+                ));
+        Mockito.when(topicRepository.findById(anyInt()))
+                .thenReturn(Optional.of(testTopic));
+        Mockito.when(categoryRepository.countByBlog_BlogFid(anyString())).thenReturn(200);
+
+        // when & then
+        Assertions.assertThrows(BadRequestException.class,
+                () -> categoryService.createCategory("caboom", 1L, request));
+    }
+
+    @Test
     @DisplayName("상위 카테고리가 private이고 등록할 하위 카테고리가 public이면 BadRequest")
     void createCaetgoryFail_CreatePublicUnderPrivate() throws Exception {
         // given
