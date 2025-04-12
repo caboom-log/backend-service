@@ -7,5 +7,5 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
 public class ChangeVisibilityRequest {
-    private boolean blogPublic;
+    private boolean categoryPublic;
 }

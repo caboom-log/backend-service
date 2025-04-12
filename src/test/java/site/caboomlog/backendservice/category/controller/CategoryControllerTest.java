@@ -312,7 +312,7 @@ class CategoryControllerTest {
         mockMvc.perform(post("/api/blogs/caboom/categories/1/public")
                 .header("X-Caboomlog-UID", UUID.randomUUID().toString())
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"blogPublic\" : true}"))
+                .content("{\"categoryPublic\" : true}"))
                 .andDo(print())
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.status").value("ERROR"));
@@ -330,7 +330,7 @@ class CategoryControllerTest {
         mockMvc.perform(post("/api/blogs/caboom/categories/1/public")
                         .header("X-Caboomlog-UID", UUID.randomUUID().toString())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"blogPublic\" : true}"))
+                        .content("{\"categoryPublic\" : true}"))
                 .andDo(print())
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value("ERROR"));
@@ -348,7 +348,7 @@ class CategoryControllerTest {
         mockMvc.perform(post("/api/blogs/caboom/categories/1/public")
                         .header("X-Caboomlog-UID", UUID.randomUUID().toString())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"blogPublic\" : true}"))
+                        .content("{\"categoryPublic\" : true}"))
                 .andDo(print())
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.status").value("ERROR"));
@@ -366,7 +366,7 @@ class CategoryControllerTest {
         mockMvc.perform(post("/api/blogs/caboom/categories/1/public")
                         .header("X-Caboomlog-UID", UUID.randomUUID().toString())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"blogPublic\" : true}"))
+                        .content("{\"categoryPublic\" : true}"))
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("SUCCESS"));

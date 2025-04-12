@@ -84,7 +84,7 @@ public class CategoryController {
                                                               @PathVariable("categoryId") Long categoryId,
                                                               @LoginMember Long ownerMbNo,
                                                               @RequestBody ChangeVisibilityRequest request) {
-        categoryService.changeVisibility(ownerMbNo, blogFid, categoryId, request.isBlogPublic());
+        categoryService.changeVisibility(ownerMbNo, blogFid, categoryId, request.isCategoryPublic());
         return ResponseEntity.ok()
                 .body(ApiResponse.ok(null));
     }

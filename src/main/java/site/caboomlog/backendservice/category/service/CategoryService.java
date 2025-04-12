@@ -133,13 +133,13 @@ public class CategoryService {
      * @param mbNo        로그인한 사용자(블로그 소유자)의 회원 번호
      * @param blogFid     블로그 식별자
      * @param categoryId  공개 여부를 변경할 카테고리 ID
-     * @param blogPublic  true: 공개, false: 비공개
+     * @param categoryPublic  true: 공개, false: 비공개
      * @throws UnauthenticatedException 사용자가 블로그 소유자가 아닐 경우
      * @throws CategoryNotFoundException 카테고리가 존재하지 않을 경우
      * @throws BadRequestException 카테고리가 해당 블로그에 속하지 않은 경우
      */
     @Transactional
-    public void changeVisibility(Long mbNo, String blogFid, Long categoryId, boolean blogPublic) {
+    public void changeVisibility(Long mbNo, String blogFid, Long categoryId, boolean categoryPublic) {
         BlogMemberMapping ownerMapping = blogMemberMappingRepository.findByMember_MbNoAndBlog_BlogFid(mbNo, blogFid);
         if (!"ROLE_OWNER".equalsIgnoreCase(ownerMapping.getRole().getRoleId())) {
             throw new UnauthenticatedException("블로그 소유자가 아닙니다.");
@@ -149,14 +149,14 @@ public class CategoryService {
         if (!blogFid.equals(category.getBlog().getBlogFid())) {
             throw new BadRequestException("카테고리가 해당 블로그 소속이 아닙니다.");
         }
-        if (blogPublic) {
-            category.changeVisibility(blogPublic);
+        if (categoryPublic) {
+            category.changeVisibility(categoryPublic);
             categoryRepository.save(category);
         } else {
             List<Category> categories = categoryRepository.findAllByBlog_BlogFid(blogFid);
             List<Category> children = collectChildren(category, categories);
             for (Category c : children) {
-                c.changeVisibility(blogPublic);
+                c.changeVisibility(categoryPublic);
                 categoryRepository.save(c);
             }
         }
