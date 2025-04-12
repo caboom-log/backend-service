@@ -2,7 +2,6 @@ package site.caboomlog.backendservice.blogmember.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import site.caboomlog.backendservice.blogmember.dto.IsMemberResponse;
 import site.caboomlog.backendservice.blogmember.repository.BlogMemberMappingRepository;
 
 @Service
@@ -16,10 +15,10 @@ public class BlogMemberMappingService {
      *
      * @param mbNo 사용자의 멤버 번호
      * @param blodFid 블로그의 고유 식별자 (FID)
-     * @return {@link IsMemberResponse} 객체로 멤버 여부를 반환 ({@code isMember: true} 또는 {@code false})
+     * @return 멤버인지 여부를 반환
      */
-    public IsMemberResponse isMemberOfBlog(Long mbNo, String blodFid) {
-        return new IsMemberResponse(blogMemberMappingRepository
-                .existsByMember_MbNoAndBlog_BlogFid(mbNo, blodFid));
+    public boolean isMemberOfBlog(Long mbNo, String blodFid) {
+        return blogMemberMappingRepository
+                .existsByMember_MbNoAndBlog_BlogFid(mbNo, blodFid);
     }
 }

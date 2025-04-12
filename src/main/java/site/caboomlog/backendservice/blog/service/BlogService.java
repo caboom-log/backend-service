@@ -56,6 +56,7 @@ public class BlogService {
                 blog.getBlogMainImg(),
                 blog.getBlogMain(),
                 blog.getBlogPublic(),
+                blog.getBlogType().name(),
                 blog.getCreatedAt()
         );
     }

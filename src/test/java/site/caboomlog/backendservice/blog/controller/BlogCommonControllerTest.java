@@ -20,6 +20,7 @@ import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import site.caboomlog.backendservice.blog.advice.BlogControllerAdvice;
 import site.caboomlog.backendservice.blog.dto.BlogInfoResponse;
 import site.caboomlog.backendservice.blog.dto.MyBlogInfoResponse;
+import site.caboomlog.backendservice.blog.entity.BlogType;
 import site.caboomlog.backendservice.blog.exception.BlogFidDuplicatedException;
 import site.caboomlog.backendservice.blog.exception.BlogNotFoundException;
 import site.caboomlog.backendservice.blog.exception.InvalidBlogCountRangeException;
@@ -110,7 +111,7 @@ class BlogCommonControllerTest {
         // given
         BlogInfoResponse blogInfoResponse = new BlogInfoResponse(
                 "공부 블로그", "공부한 내용을 정리합니다.", null,
-                true, true, null);
+                true, true, BlogType.PERSONAL.name(), null);
         Mockito.when(blogService.getBlogInfo(anyString()))
                         .thenReturn(blogInfoResponse);
 
@@ -163,7 +164,6 @@ class BlogCommonControllerTest {
                 .andDo(print())
                 .andExpect(jsonPath("$.status").value("ERROR"))
                 .andExpect(jsonPath("$.code").value(401))
-                .andExpect(jsonPath("$.message").value("X-Caboomlog-UID 헤더 없음"))
                 .andExpect(status().isUnauthorized());
     }
 

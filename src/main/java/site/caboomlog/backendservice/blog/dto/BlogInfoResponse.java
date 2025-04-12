@@ -15,6 +15,7 @@ public class BlogInfoResponse {
 
     private boolean blogMain;
     private boolean blogPublic;
+    private String blogType;
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDateTime createdAt;
 }
