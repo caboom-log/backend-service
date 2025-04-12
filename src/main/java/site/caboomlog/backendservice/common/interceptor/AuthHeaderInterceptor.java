@@ -13,10 +13,12 @@ public class AuthHeaderInterceptor implements HandlerInterceptor {
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
+        String uri = request.getRequestURI();
         if (request.getMethod().equalsIgnoreCase("GET") &&
-                (request.getRequestURI().matches("/api/blogs/[^/]+$") ||
-                    request.getRequestURI().matches("/api/blogs/[^/]+/members") ||
-                    request.getRequestURI().matches("/api/topics"))
+                (uri.matches("/api/blogs/[^/]+$") ||
+                uri.matches("/api/blogs/[^/]+/members") ||
+                uri.matches("/api/topics") ||
+                uri.matches("/api/blogs/[^/]+/categories/public"))
         ) {
             return true;
         }
