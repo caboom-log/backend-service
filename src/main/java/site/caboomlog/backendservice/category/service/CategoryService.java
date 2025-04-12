@@ -123,6 +123,73 @@ public class CategoryService {
     }
 
     /**
+     * 카테고리의 공개 여부를 변경합니다.
+     * <p>
+     * 블로그 소유자만 변경할 수 있으며,
+     * 비공개로 변경할 경우 해당 카테고리 및 모든 하위 카테고리들이 함께 비공개로 전환됩니다.
+     * 공개로 변경할 경우에는 해당 카테고리만 공개로 전환됩니다.
+     * </p>
+     *
+     * @param mbNo        로그인한 사용자(블로그 소유자)의 회원 번호
+     * @param blogFid     블로그 식별자
+     * @param categoryId  공개 여부를 변경할 카테고리 ID
+     * @param blogPublic  true: 공개, false: 비공개
+     * @throws UnauthenticatedException 사용자가 블로그 소유자가 아닐 경우
+     * @throws CategoryNotFoundException 카테고리가 존재하지 않을 경우
+     * @throws BadRequestException 카테고리가 해당 블로그에 속하지 않은 경우
+     */
+    @Transactional
+    public void changeVisibility(Long mbNo, String blogFid, Long categoryId, boolean blogPublic) {
+        BlogMemberMapping ownerMapping = blogMemberMappingRepository.findByMember_MbNoAndBlog_BlogFid(mbNo, blogFid);
+        if (!"ROLE_OWNER".equalsIgnoreCase(ownerMapping.getRole().getRoleId())) {
+            throw new UnauthenticatedException("블로그 소유자가 아닙니다.");
+        }
+        Category category = categoryRepository.findByCategoryId(categoryId)
+                .orElseThrow(() -> new CategoryNotFoundException("카테고리가 존재하지 않습니다."));
+        if (!blogFid.equals(category.getBlog().getBlogFid())) {
+            throw new BadRequestException("카테고리가 해당 블로그 소속이 아닙니다.");
+        }
+        if (blogPublic) {
+            category.changeVisibility(blogPublic);
+            categoryRepository.save(category);
+        } else {
+            List<Category> categories = categoryRepository.findAllByBlog_BlogFid(blogFid);
+            List<Category> children = collectChildren(category, categories);
+            for (Category c : children) {
+                c.changeVisibility(blogPublic);
+                categoryRepository.save(c);
+            }
+        }
+    }
+
+    /**
+     * 지정된 카테고리와 그 모든 하위 카테고리를 BFS 방식으로 수집합니다.
+     *
+     * @param category       시작 카테고리 (루트 또는 특정 상위 카테고리)
+     * @param allCategories  전체 카테고리 목록
+     * @return 시작 카테고리를 포함한 모든 하위 카테고리 리스트
+     */
+    private List<Category> collectChildren(Category category, List<Category> allCategories) {
+        List<Category> children = new ArrayList<>();
+        Deque<Long> queue = new ArrayDeque<>();
+        queue.add(category.getCategoryId());
+        children.add(category);
+
+        while (!queue.isEmpty()) {
+            Long currentId = queue.poll();
+            for (Category c : allCategories) {
+                if (c.getParentCategory() != null &&
+                        Objects.equals(c.getParentCategory().getCategoryId(), currentId)) {
+                    queue.add(c.getCategoryId());
+                    children.add(c);
+                }
+            }
+        }
+        return children;
+    }
+
+
+    /**
      * 카테고리 목록을 트리 구조로 변환합니다.
      * <p>
      * 부모-자식 관계를 기반으로 트리를 구성하며,

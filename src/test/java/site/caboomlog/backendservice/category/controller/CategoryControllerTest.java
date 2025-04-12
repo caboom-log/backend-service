@@ -18,6 +18,7 @@ import site.caboomlog.backendservice.blog.entity.BlogType;
 import site.caboomlog.backendservice.category.advice.CategoryControllerAdvice;
 import site.caboomlog.backendservice.category.dto.CategoryResponse;
 import site.caboomlog.backendservice.category.entity.Category;
+import site.caboomlog.backendservice.category.exception.CategoryNotFoundException;
 import site.caboomlog.backendservice.category.service.CategoryService;
 import site.caboomlog.backendservice.common.advice.CommonControllerAdvice;
 import site.caboomlog.backendservice.common.annotation.LoginMemberArgumentResolver;
@@ -299,4 +300,75 @@ class CategoryControllerTest {
                 .andExpect(jsonPath("$.content[0].children", hasSize(1)));
     }
 
+    @Test
+    @DisplayName("카테고리 공개로 변경 실패 - 블로그 소유자가 아님")
+    void changeVisibilityFail_Unauthenticated() throws Exception {
+        // given
+        Mockito.when(memberRepository.findByMbUuid(anyString())).thenReturn(Optional.of(testMember));
+        Mockito.doThrow(new UnauthenticatedException("블로그 소유자가 아닙니다."))
+                .when(categoryService).changeVisibility(anyLong(), anyString(), anyLong(), anyBoolean());
+
+        // when & then
+        mockMvc.perform(post("/api/blogs/caboom/categories/1/public")
+                .header("X-Caboomlog-UID", UUID.randomUUID().toString())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"blogPublic\" : true}"))
+                .andDo(print())
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.status").value("ERROR"));
+    }
+
+    @Test
+    @DisplayName("카테고리 비공개로 변경 실패 - 블로그 소속 카테고리가 아님")
+    void changeVisibilityFail_NotBelongsToBlog() throws Exception {
+        // given
+        Mockito.when(memberRepository.findByMbUuid(anyString())).thenReturn(Optional.of(testMember));
+        Mockito.doThrow(new BadRequestException("해당 카테고리는 해당 블로그 카테고리가 아닙니다."))
+                .when(categoryService).changeVisibility(anyLong(), anyString(), anyLong(), anyBoolean());
+
+        // when & then
+        mockMvc.perform(post("/api/blogs/caboom/categories/1/public")
+                        .header("X-Caboomlog-UID", UUID.randomUUID().toString())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"blogPublic\" : true}"))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value("ERROR"));
+    }
+
+    @Test
+    @DisplayName("카테고리 비공개로 변경 실패 - 카테고리가 존재하지 않음")
+    void changeVisibilityFail_CategoryNotFound() throws Exception {
+        // given
+        Mockito.when(memberRepository.findByMbUuid(anyString())).thenReturn(Optional.of(testMember));
+        Mockito.doThrow(new CategoryNotFoundException("카테고리가 존재하지 않습니다."))
+                .when(categoryService).changeVisibility(anyLong(), anyString(), anyLong(), anyBoolean());
+
+        // when & then
+        mockMvc.perform(post("/api/blogs/caboom/categories/1/public")
+                        .header("X-Caboomlog-UID", UUID.randomUUID().toString())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"blogPublic\" : true}"))
+                .andDo(print())
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value("ERROR"));
+    }
+
+    @Test
+    @DisplayName("카테고리 공개로 변경 성공")
+    void changeVisibilitySuccess() throws Exception {
+        // given
+        Mockito.when(memberRepository.findByMbUuid(anyString())).thenReturn(Optional.of(testMember));
+        Mockito.doNothing()
+                .when(categoryService).changeVisibility(anyLong(), anyString(), anyLong(), anyBoolean());
+
+        // when & then
+        mockMvc.perform(post("/api/blogs/caboom/categories/1/public")
+                        .header("X-Caboomlog-UID", UUID.randomUUID().toString())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"blogPublic\" : true}"))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("SUCCESS"));
+    }
 }

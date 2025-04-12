@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import site.caboomlog.backendservice.category.dto.CategoryResponse;
+import site.caboomlog.backendservice.category.dto.ChangeVisibilityRequest;
 import site.caboomlog.backendservice.category.dto.CreateCategoryRequest;
 import site.caboomlog.backendservice.category.service.CategoryService;
 import site.caboomlog.backendservice.common.annotation.LoginMember;
@@ -63,5 +64,28 @@ public class CategoryController {
                                                                                           String blogFid) {
         List<CategoryResponse> categories = categoryService.getAllPublicCategories(blogFid);
         return ResponseEntity.ok(ApiResponse.ok(categories));
+    }
+
+    /**
+     * 카테고리 공개 여부를 변경합니다.
+     * <p>
+     * 공개 상태를 비공개로 변경할 경우, 해당 카테고리의 하위 카테고리들도 모두 비공개로 변경됩니다.
+     * 공개로 전환할 경우, 해당 카테고리만 공개로 변경됩니다.
+     * </p>
+     *
+     * @param blogFid     블로그 식별자
+     * @param categoryId  카테고리 ID
+     * @param ownerMbNo   로그인한 사용자(블로그 소유자)의 회원 번호
+     * @param request     공개 여부 변경 요청 객체
+     * @return 상태 200 OK 응답
+     */
+    @PostMapping("/{categoryId}/public")
+    public ResponseEntity<ApiResponse<Void>> changeVisibility(@PathVariable("blogFid") String blogFid,
+                                                              @PathVariable("categoryId") Long categoryId,
+                                                              @LoginMember Long ownerMbNo,
+                                                              @RequestBody ChangeVisibilityRequest request) {
+        categoryService.changeVisibility(ownerMbNo, blogFid, categoryId, request.isBlogPublic());
+        return ResponseEntity.ok()
+                .body(ApiResponse.ok(null));
     }
 }

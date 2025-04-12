@@ -76,4 +76,19 @@ public class Category {
         return new Category(null, blog, parentCategory, topic,
                 categoryName, categoryPublic, categoryOrder, depth, null, null);
     }
+
+    @PreUpdate
+    public void preUpdate() {
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    public void changeVisibility(boolean categoryPublic) {
+        this.categoryPublic = categoryPublic;
+    }
+
+    public static void switchOrder(Category category1, Category category2) {
+        long order = category1.getCategoryOrder();
+        category1.categoryOrder = category2.getCategoryOrder();
+        category2.categoryOrder = order;
+    }
 }

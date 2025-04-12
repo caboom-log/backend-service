@@ -367,4 +367,121 @@ class CategoryServiceTest {
         Assertions.assertEquals(1, r2.getChildren().size());
         Assertions.assertEquals("서브2-1", r2.getChildren().get(0).getCategoryName());
     }
+
+    @Test
+    @DisplayName("카테고리 공개 여부 변경 실패 - 블로그 소유자가 아님")
+    void changeVisibilityFail_Unauthenticated() {
+        // given
+        Mockito.when(blogMemberMappingRepository.findByMember_MbNoAndBlog_BlogFid(anyLong(), anyString()))
+                .thenReturn(BlogMemberMapping.ofNewBlogMemberMapping(
+                        testBlog, testMember,
+                        Role.ofNewRole("ROLE_MEMBER", "블로그_멤버", "멤버"),
+                        "멤버"
+                ));
+        // when & then
+        Assertions.assertThrows(UnauthenticatedException.class,
+                () -> categoryService.changeVisibility(1L, "caboom", 1L, true));
+
+    }
+
+    @Test
+    @DisplayName("카테고리 공개 여부 변경 실패 - 카테고리가 블로그에 소속되지 않음")
+    void changeVisibilityFail_CategoryNotBelongsToBlog() {
+        // given
+        Mockito.when(blogMemberMappingRepository.findByMember_MbNoAndBlog_BlogFid(anyLong(), anyString()))
+                .thenReturn(BlogMemberMapping.ofNewBlogMemberMapping(testBlog, testMember, roleOwner, "멤버"));
+        Mockito.when(categoryRepository.findByCategoryId(anyLong()))
+                .thenReturn(Optional.of(Category.ofNewCategory(
+                        Blog.ofNewBlog("다른블로그", true, "다른블로그", null,
+                                false, BlogType.PERSONAL),
+                        null, testTopic, "카테고리!", true,
+                        1L, 1L)));
+
+        // when & then
+        Assertions.assertThrows(BadRequestException.class,
+                () -> categoryService.changeVisibility(1L, "caboom", 1L, true));
+    }
+
+    @Test
+    @DisplayName("카테고리 공개 여부 변경 성공")
+    void changeVisibilitySuccess() {
+        // given
+        Mockito.when(blogMemberMappingRepository.findByMember_MbNoAndBlog_BlogFid(anyLong(), anyString()))
+                .thenReturn(BlogMemberMapping.ofNewBlogMemberMapping(testBlog, testMember, roleOwner, "멤버"));
+        Mockito.when(categoryRepository.findByCategoryId(anyLong()))
+                .thenReturn(Optional.of(Category.ofNewCategory(testBlog, null, testTopic,
+                        "카테고리!", false, 1L, 1L)));
+
+        // when
+        categoryService.changeVisibility(1L, "caboom", 1L, true);
+        Mockito.verify(categoryRepository).save(categoryCaptor.capture());
+        Category saved = categoryCaptor.getValue();
+
+        // then
+        Assertions.assertTrue(saved.getCategoryPublic());
+    }
+
+    @Test
+    @DisplayName("카테고리 공개 여부 변경 성공 - 상위 카테고리 private으로 변경시 하위 카테고리도 모두 private으로 변경")
+    void changeVisibilitySuccess_childrenPrivate() throws Exception {
+        // given
+        Category parent = Category.ofNewCategory(testBlog, null, testTopic, "루트1",
+                true, 1L, 1L);
+        Category child1 = Category.ofNewCategory(testBlog, parent, testTopic, "자식1",
+                true, 1L, 2L);
+        Category child2 = Category.ofNewCategory(testBlog, parent, testTopic, "자식2",
+                true, 2L, 2L);
+        Field categoryIdField = Category.class.getDeclaredField("categoryId");
+        categoryIdField.setAccessible(true);
+        categoryIdField.set(parent, 1L);
+        categoryIdField.set(child1, 2L);
+        categoryIdField.set(child2, 3L);
+        Mockito.when(blogMemberMappingRepository.findByMember_MbNoAndBlog_BlogFid(anyLong(), anyString()))
+                .thenReturn(BlogMemberMapping.ofNewBlogMemberMapping(testBlog, testMember, roleOwner, "멤버"));
+        Mockito.when(categoryRepository.findByCategoryId(anyLong()))
+                .thenReturn(Optional.of(parent));
+        Mockito.when(categoryRepository.findAllByBlog_BlogFid(anyString()))
+                .thenReturn(List.of(parent, child1, child2));
+
+        // when
+        categoryService.changeVisibility(testMember.getMbNo(), testBlog.getBlogFid(), parent.getCategoryId(),
+                false);
+
+        // then
+        Assertions.assertFalse(parent.getCategoryPublic());
+        Assertions.assertFalse(child1.getCategoryPublic());
+        Assertions.assertFalse(child2.getCategoryPublic());
+    }
+
+    @Test
+    @DisplayName("카테고리 공개 여부 변경 성공 - 상위 카테고리 public으로 변경시 하위 카테고리는 변경x")
+    void changeVisibilitySuccess_parentPublic() throws Exception {
+        // given
+        Category parent = Category.ofNewCategory(testBlog, null, testTopic, "루트1",
+                false, 1L, 1L);
+        Category child1 = Category.ofNewCategory(testBlog, parent, testTopic, "자식1",
+                false, 1L, 2L);
+        Category child2 = Category.ofNewCategory(testBlog, parent, testTopic, "자식2",
+                false, 2L, 2L);
+        Field categoryIdField = Category.class.getDeclaredField("categoryId");
+        categoryIdField.setAccessible(true);
+        categoryIdField.set(parent, 1L);
+        categoryIdField.set(child1, 2L);
+        categoryIdField.set(child2, 3L);
+        Mockito.when(blogMemberMappingRepository.findByMember_MbNoAndBlog_BlogFid(anyLong(), anyString()))
+                .thenReturn(BlogMemberMapping.ofNewBlogMemberMapping(testBlog, testMember, roleOwner, "멤버"));
+        Mockito.when(categoryRepository.findByCategoryId(anyLong()))
+                .thenReturn(Optional.of(parent));
+
+        // when
+        categoryService.changeVisibility(testMember.getMbNo(), testBlog.getBlogFid(), parent.getCategoryId(),
+                true);
+
+        // then
+        Assertions.assertTrue(parent.getCategoryPublic());
+        Assertions.assertFalse(child1.getCategoryPublic());
+        Assertions.assertFalse(child2.getCategoryPublic());
+        Mockito.verify(categoryRepository, Mockito.times(1)).save(any(Category.class));
+        Mockito.verify(categoryRepository, Mockito.times(0)).findAllByBlog_BlogFid(anyString());
+    }
 }
