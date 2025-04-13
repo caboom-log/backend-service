@@ -7,6 +7,7 @@ import site.caboomlog.backendservice.blogmember.entity.BlogMemberMapping;
 import java.util.List;
 
 public interface BlogMemberMappingRepository extends JpaRepository<BlogMemberMapping, Long>, BlogMemberMappingRepositoryCustom {
+    @Query("SELECT m FROM BlogMemberMapping m JOIN FETCH m.blog WHERE m.member.mbNo = ?1 AND m.blog.blogMain = ?2")
     BlogMemberMapping findByMember_MbNoAndBlog_BlogMain(Long mbNo, boolean isMain);
 
     boolean existsByMember_MbNoAndBlog_BlogFid(Long mbNo, String blogFid);

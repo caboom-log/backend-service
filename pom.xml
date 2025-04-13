@@ -91,7 +91,6 @@
             <artifactId>spring-boot-starter-websocket</artifactId>
         </dependency>
 
-
     </dependencies>
 
     <build>

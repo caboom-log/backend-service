@@ -28,6 +28,9 @@ public class LoginMemberArgumentResolver implements HandlerMethodArgumentResolve
     public Object resolveArgument(MethodParameter parameter, ModelAndViewContainer mavContainer, NativeWebRequest webRequest, WebDataBinderFactory binderFactory) throws Exception {
         String mbUuid = webRequest.getHeader("X-Caboomlog-UID");
         if (!StringUtils.hasText(mbUuid)) {
+            if (!parameter.getParameterAnnotation(LoginMember.class).required()) {
+                return null;
+            }
             throw new UnauthorizedException("X-Caboomlog-UID 헤더 없음");
         }
         Member member = memberRepository.findByMbUuid(mbUuid)

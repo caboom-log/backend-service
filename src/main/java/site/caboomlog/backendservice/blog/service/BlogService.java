@@ -15,6 +15,8 @@ import site.caboomlog.backendservice.blog.exception.InvalidBlogCountRangeExcepti
 import site.caboomlog.backendservice.blog.repository.BlogRepository;
 import site.caboomlog.backendservice.blogmember.entity.BlogMemberMapping;
 import site.caboomlog.backendservice.blogmember.repository.BlogMemberMappingRepository;
+import site.caboomlog.backendservice.category.entity.Category;
+import site.caboomlog.backendservice.category.repository.CategoryRepository;
 import site.caboomlog.backendservice.common.exception.BadRequestException;
 import site.caboomlog.backendservice.common.exception.UnauthenticatedException;
 import site.caboomlog.backendservice.member.entity.Member;
@@ -35,6 +37,7 @@ public class BlogService {
     private final BlogMemberMappingRepository blogMemberMappingRepository;
     private final MemberRepository memberRepository;
     private final RoleRepository roleRepository;
+    private final CategoryRepository categoryRepository;
 
     /**
      * 블로그 FID를 기준으로 블로그 정보를 조회하여 응답 DTO로 반환합니다.
@@ -56,6 +59,7 @@ public class BlogService {
                 blog.getBlogMainImg(),
                 blog.getBlogMain(),
                 blog.getBlogPublic(),
+                blog.getBlogType().name(),
                 blog.getCreatedAt()
         );
     }
@@ -107,6 +111,10 @@ public class BlogService {
                 request.getMbNickname()
         );
         blogMemberMappingRepository.save(blogMemberMapping);
+
+        Category category = Category.ofNewCategory(newBlog, null, null, "카테고리 없음",
+                true, 0, 0);
+        categoryRepository.save(category);
     }
 
     /**

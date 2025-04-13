@@ -175,6 +175,9 @@ public class CategoryService {
         if (!Objects.equals(category1.getDepth(), category2.getDepth())) {
             throw new BadRequestException("카테고리 정렬 순서는 같은 레벨끼리만 바꿀 수 있습니다.");
         }
+        if (category1.getCategoryOrder() == 0 || category2.getCategoryOrder() == 0) {
+            throw new BadRequestException("순서를 바꿀 수 없습니다.");
+        }
         Category.switchOrder(category1, category2);
     }
 
@@ -248,6 +251,9 @@ public class CategoryService {
                 CategoryResponse parent = map.get(category.getParentCategory().getCategoryId());
                 parent.getChildren().add(current);
             } else {
+                if ("카테고리 없음".equals(category.getCategoryName())) {
+                    current.setCategoryName("전체");
+                }
                 rootList.add(current);
             }
         }
