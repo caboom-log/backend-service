@@ -25,6 +25,6 @@ public class CategoryResponse {
         this.categoryName = category.getCategoryName();
         this.categoryPublic = category.getCategoryPublic();
         this.depth = category.getDepth();
-        this.topicName = category.getTopic().getTopicName();
+        this.topicName = category.getTopic() != null ? category.getTopic().getTopicName() : null;
     }
 }

@@ -18,15 +18,17 @@ public class AuthHeaderInterceptor implements HandlerInterceptor {
                 (uri.matches("/api/blogs/[^/]+$") ||
                 uri.matches("/api/blogs/[^/]+/members") ||
                 uri.matches("/api/topics") ||
+                uri.matches("/api/posts/public") ||
                 uri.matches("/api/blogs/[^/]+/categories/public") ||
-                uri.matches("/api/blogs/[^/]+/posts/public"))
+                uri.matches("/api/blogs/[^/]+/posts/public") ||
+                uri.matches("/api/blogs/[^/]+/posts/\\d+"))
         ) {
             return true;
         }
 
         log.debug("preHandle - X-Caboomlog-UID 헤더 검증");
         String header = request.getHeader("X-Caboomlog-UID");
-        if (header == null || header.isBlank()) {
+        if ((header == null || header.isBlank())) {
             throw new UnauthorizedException("X-Caboomlog-UID 헤더 없음, uri: " + uri);
         }
         return true;

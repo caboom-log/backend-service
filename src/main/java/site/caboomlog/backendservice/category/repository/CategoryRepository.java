@@ -12,13 +12,15 @@ public interface CategoryRepository extends JpaRepository<Category, Long> {
 
     int countByBlog_BlogFid(String blogFid);
 
-    @Query("SELECT c FROM Category c JOIN FETCH c.topic WHERE c.blog.blogFid = ?1 ORDER BY c.categoryOrder ASC")
+    @Query("SELECT c FROM Category c LEFT JOIN FETCH c.topic WHERE c.blog.blogFid = ?1 ORDER BY c.categoryOrder ASC")
     List<Category> findAllByBlog_BlogFid(String blogFid);
 
-    @Query("SELECT c FROM Category c JOIN FETCH c.topic WHERE c.blog.blogFid = ?1 AND c.categoryPublic = true ORDER BY c.categoryOrder ASC")
+    @Query("SELECT c FROM Category c LEFT JOIN FETCH c.topic WHERE c.blog.blogFid = ?1 AND c.categoryPublic = true ORDER BY c.categoryOrder ASC")
     List<Category> findAllPublicByBlog_BlogFid(String blogFid);
 
     @Query("SELECT c FROM Category c JOIN FETCH c.blog WHERE c.categoryId = ?1")
     Optional<Category> findByCategoryId(long categoryId);
+
+    Optional<Category> findByBlog_BlogFidAndAndCategoryName(String blogFid, String categoryName);
 
 }
