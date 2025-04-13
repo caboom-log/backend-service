@@ -19,6 +19,7 @@ import site.caboomlog.backendservice.blog.exception.InvalidBlogCountRangeExcepti
 import site.caboomlog.backendservice.blog.repository.BlogRepository;
 import site.caboomlog.backendservice.blogmember.entity.BlogMemberMapping;
 import site.caboomlog.backendservice.blogmember.repository.BlogMemberMappingRepository;
+import site.caboomlog.backendservice.category.repository.CategoryRepository;
 import site.caboomlog.backendservice.common.exception.BadRequestException;
 import site.caboomlog.backendservice.common.exception.UnauthenticatedException;
 import site.caboomlog.backendservice.member.entity.Member;
@@ -43,6 +44,8 @@ class BlogServiceTest {
     MemberRepository memberRepository;
     @Mock
     RoleRepository roleRepository;
+    @Mock
+    CategoryRepository categoryRepository;
     @InjectMocks
     BlogService blogService;
 
