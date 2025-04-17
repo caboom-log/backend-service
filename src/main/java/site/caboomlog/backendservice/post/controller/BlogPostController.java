@@ -1,5 +1,6 @@
 package site.caboomlog.backendservice.post.controller;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -28,7 +29,7 @@ public class BlogPostController {
     @PostMapping
     public ResponseEntity<ApiResponse<Void>> writePost(@PathVariable("blogFid") String blogFid,
                                                  @LoginMember Long mbNo,
-                                                 @RequestBody CreatePostRequest request) {
+                                                 @RequestBody @Valid CreatePostRequest request) {
         blogPostService.createPost(blogFid, mbNo, request);
         log.info("post request: {}", request);
 

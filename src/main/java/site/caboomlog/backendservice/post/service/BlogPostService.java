@@ -9,6 +9,7 @@ import site.caboomlog.backendservice.category.entity.Category;
 import site.caboomlog.backendservice.category.exception.CategoryNotFoundException;
 import site.caboomlog.backendservice.category.repository.CategoryRepository;
 import site.caboomlog.backendservice.common.exception.BadRequestException;
+import site.caboomlog.backendservice.common.exception.DatabaseException;
 import site.caboomlog.backendservice.common.exception.UnauthenticatedException;
 import site.caboomlog.backendservice.post.dto.CreatePostRequest;
 import site.caboomlog.backendservice.post.dto.PostDetailResponse;
@@ -18,6 +19,8 @@ import site.caboomlog.backendservice.post.exception.PostNotFoundException;
 import site.caboomlog.backendservice.post.repository.PostCategoryMappingRepository;
 import site.caboomlog.backendservice.post.repository.PostRepository;
 import site.caboomlog.backendservice.post.repository.PostRepositoryImpl;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -42,19 +45,17 @@ public class BlogPostService {
     @Transactional
     public void createPost(String blogFid, Long mbNo, CreatePostRequest request) {
         BlogMemberMapping ownerMapping = blogMemberMappingRepository.findByMember_MbNoAndBlog_BlogFid(mbNo, blogFid);
-        if (!("ROLE_OWNER".equalsIgnoreCase(ownerMapping.getRole().getRoleId()) ||
-        "ROLE_MEMBER".equalsIgnoreCase(ownerMapping.getRole().getRoleId()))) {
+        if (ownerMapping == null ||
+                !("ROLE_OWNER".equalsIgnoreCase(ownerMapping.getRole().getRoleId()) ||
+                "ROLE_MEMBER".equalsIgnoreCase(ownerMapping.getRole().getRoleId()))) {
             throw new UnauthenticatedException("포스팅은 블로그 회원만 작성할 수 있습니다.");
         }
 
-        if (request.getTitle().isBlank()) {
-            throw new BadRequestException("제목은 한 글자 이상 작성해주세요.");
-        }
         if (request.getCategoryIds().isEmpty()) {
             Category categoryNone = categoryRepository
                     .findByBlog_BlogFidAndAndCategoryName(blogFid, "카테고리 없음")
-                            .orElseThrow(() -> new RuntimeException("카테고리 없음 카테고리가 없음!"));
-            request.getCategoryIds().add(categoryNone.getCategoryId());
+                            .orElseThrow(() -> new DatabaseException("카테고리 없음 카테고리가 없음!"));
+            request.setCategoryIds(List.of(categoryNone.getCategoryId()));
         }
 
         Post post = Post.ofNewPost(ownerMapping.getBlog(), ownerMapping.getMember(),
@@ -68,8 +69,10 @@ public class BlogPostService {
             if (!blogFid.equals(category.getBlog().getBlogFid())) {
                 throw new BadRequestException("해당 카테고리가 블로그 소속이 아닙니다.");
             }
-            if (Boolean.FALSE.equals(category.getCategoryPublic()) && request.isPostPublic()) {
-                throw new BadRequestException("비공개 카테고리에는 공개 포스팅을 작성할 수 없습니다.");
+            if ((Boolean.FALSE.equals(category.getCategoryPublic())
+                    || Boolean.FALSE.equals(ownerMapping.getBlog().getBlogPublic()))
+                    && request.isPostPublic()) {
+                throw new BadRequestException("비공개 블로그/카테고리에는 공개 포스팅을 작성할 수 없습니다.");
             }
 
             PostCategoryMapping postCategoryMapping = PostCategoryMapping.ofNewPostCategoryMapping(category, post);
