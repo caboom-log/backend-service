@@ -13,6 +13,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
+import site.caboomlog.backendservice.blog.dto.TeamBlogMemberResponse;
 import site.caboomlog.backendservice.common.advice.CommonControllerAdvice;
 import site.caboomlog.backendservice.common.annotation.LoginMemberArgumentResolver;
 import site.caboomlog.backendservice.common.exception.BadRequestException;
@@ -21,12 +22,16 @@ import site.caboomlog.backendservice.common.exception.UnauthenticatedException;
 import site.caboomlog.backendservice.common.interceptor.AuthHeaderInterceptor;
 import site.caboomlog.backendservice.member.entity.Member;
 import site.caboomlog.backendservice.member.repository.MemberRepository;
+import site.caboomlog.backendservice.post.advice.PostControllerAdvice;
+import site.caboomlog.backendservice.post.dto.PostDetailResponse;
+import site.caboomlog.backendservice.post.exception.PostNotFoundException;
 import site.caboomlog.backendservice.post.service.BlogPostService;
 
 import java.util.Optional;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -71,7 +76,9 @@ class BlogPostControllerTest {
                 .standaloneSetup(new BlogPostController(blogPostService))
                 .setCustomArgumentResolvers(loginMemberArgumentResolver)
                 .addInterceptors(authHeaderInterceptor)
-                .setControllerAdvice(CommonControllerAdvice.class)
+                .setControllerAdvice(
+                        PostControllerAdvice.class,
+                        CommonControllerAdvice.class)
                 .build();
     }
 
@@ -205,4 +212,81 @@ class BlogPostControllerTest {
                 .andExpect(jsonPath("$.status").value("SUCCESS"));
     }
 
+    @Test
+    @DisplayName("블로그 게시글 단일 조회 실패 - 로그인하지 않은 상태로 비공개 게시글을 조회 시도")
+    void getPostDetailFail_Unauthorized() throws Exception {
+        // given
+        Mockito.when(memberRepository.findByMbUuid(anyString())).thenReturn(Optional.empty());
+        Mockito.doThrow(new UnauthenticatedException("권한 없음"))
+                .when(blogPostService).getPostDetail(anyString(), anyLong(), any());
+
+        // when & then
+        mockMvc.perform(get("/api/blogs/caboom/posts/1"))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.status").value("ERROR"));
+    }
+
+    @Test
+    @DisplayName("블로그 게시글 단일 조회 실패 - 인가되지 않은 회원이 비공개 게시글을 조회 시도")
+    void getPostDetailFail_Unauthenticated() throws Exception {
+        // given
+        Mockito.when(memberRepository.findByMbUuid(anyString())).thenReturn(Optional.of(testMember));
+        Mockito.doThrow(new UnauthenticatedException("권한 없음"))
+                .when(blogPostService).getPostDetail(anyString(), anyLong(), any());
+
+        // when & then
+        mockMvc.perform(get("/api/blogs/caboom/posts/1")
+                .header("X-Caboomlog-UID", UUID.randomUUID().toString()))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.status").value("ERROR"));
+    }
+
+    @Test
+    @DisplayName("블로그 게시글 단일 조회 실패 - 존재하지 않는 게시글")
+    void getPostDetailFail_PostNotFound() throws Exception {
+        // given
+        Mockito.when(memberRepository.findByMbUuid(anyString())).thenReturn(Optional.of(testMember));
+        Mockito.doThrow(new PostNotFoundException("게시글이 없음"))
+                .when(blogPostService).getPostDetail(anyString(), anyLong(), any());
+
+        // when & then
+        mockMvc.perform(get("/api/blogs/caboom/posts/1")
+                .header("X-Caboomlog-UID", UUID.randomUUID().toString()))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value("ERROR"));
+    }
+
+    @Test
+    @DisplayName("블로그 게시글 단일 조회 실패 - 게시글이 블로그 소속 게시글이 아닐때")
+    void getPostDetailFail_BadRequest() throws Exception {
+        // given
+        Mockito.when(memberRepository.findByMbUuid(anyString())).thenReturn(Optional.of(testMember));
+        Mockito.doThrow(new BadRequestException("잘못된 요청입니다."))
+                .when(blogPostService).getPostDetail(anyString(), anyLong(), any());
+
+        // when & then
+        mockMvc.perform(get("/api/blogs/caboom/posts/1")
+                        .header("X-Caboomlog-UID", UUID.randomUUID().toString()))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value("ERROR"));
+    }
+
+    @Test
+    @DisplayName("블로그 게시글 단일 조회 성공")
+    void getPostDetailSuccess() throws Exception {
+        // given
+        Mockito.when(memberRepository.findByMbUuid(anyString())).thenReturn(Optional.of(testMember));
+        Mockito.when(blogPostService.getPostDetail(anyString(), anyLong(), any()))
+                .thenReturn(new PostDetailResponse(1L,
+                        new TeamBlogMemberResponse(UUID.randomUUID().toString(), "글쓴이", "카붐로그"), null,
+                        "제목", "안녕하세요.", true, 1L,
+                        null, null, null));
+
+        // when & then
+        mockMvc.perform(get("/api/blogs/caboom/posts/1")
+                        .header("X-Caboomlog-UID", UUID.randomUUID().toString()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("SUCCESS"))
+                .andExpect(jsonPath("$.content.title").value("제목"));
+    }
 }

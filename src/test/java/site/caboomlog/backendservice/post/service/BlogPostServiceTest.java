@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
+import site.caboomlog.backendservice.blog.dto.TeamBlogMemberResponse;
 import site.caboomlog.backendservice.blog.entity.Blog;
 import site.caboomlog.backendservice.blog.entity.BlogType;
 import site.caboomlog.backendservice.blogmember.entity.BlogMemberMapping;
@@ -18,8 +19,10 @@ import site.caboomlog.backendservice.common.exception.DatabaseException;
 import site.caboomlog.backendservice.common.exception.UnauthenticatedException;
 import site.caboomlog.backendservice.member.entity.Member;
 import site.caboomlog.backendservice.post.dto.CreatePostRequest;
+import site.caboomlog.backendservice.post.dto.PostDetailResponse;
 import site.caboomlog.backendservice.post.entity.Post;
 import site.caboomlog.backendservice.post.entity.PostCategoryMapping;
+import site.caboomlog.backendservice.post.exception.PostNotFoundException;
 import site.caboomlog.backendservice.post.repository.PostCategoryMappingRepository;
 import site.caboomlog.backendservice.post.repository.PostRepository;
 import site.caboomlog.backendservice.post.repository.PostRepositoryImpl;
@@ -30,6 +33,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.*;
 
@@ -239,4 +243,126 @@ class BlogPostServiceTest {
         Mockito.verify(postCategoryMappingRepository, Mockito.times(request.getCategoryIds().size())).save(any());
         Mockito.verify(postRepository, Mockito.times(1)).save(any());
     }
+
+    @Test
+    @DisplayName("게시글 단일조회 실패 - 존재하지 않는 게시글")
+    void getPostDetailFail() {
+        // given
+        Mockito.when(postRepository.findByPostId(anyLong())).thenReturn(Optional.empty());
+
+        // when & then
+        Assertions.assertThrows(PostNotFoundException.class,
+                () -> blogPostService.getPostDetail("caboom", 1L, 1L));
+    }
+
+    @Test
+    @DisplayName("비공개 게시글 단일조회 실패 - 로그인하지 않았음")
+    void getPostDetailFail_Unauthorized() {
+        // given
+        Post post = Post.ofNewPost(testBlog, testMember, "제목", "안녕하세요",
+                false, null);
+        Mockito.when(postRepository.findByPostId(anyLong()))
+                .thenReturn(Optional.of(post));
+
+        // when & then
+        Assertions.assertThrows(UnauthenticatedException.class,
+                () -> blogPostService.getPostDetail("caboom", 1L, null));
+    }
+
+    @Test
+    @DisplayName("비공개 게시글 단일조회 성공")
+    void getPostDetailSuccess_Public() {
+        // given
+        Post post = Post.ofNewPost(testBlog, testMember, "제목", "안녕하세요",
+                false, null);
+        Mockito.when(postRepository.findByPostId(anyLong()))
+                .thenReturn(Optional.of(post));
+        Mockito.when(postRepositoryCustom.findPostDetailById(anyLong()))
+                .thenReturn(Optional.of(new PostDetailResponse(1L,
+                        new TeamBlogMemberResponse(UUID.randomUUID().toString(), "작성자", "caboom"),
+                        null, "제목", "내용",
+                        false, 1L, null, null,
+                        List.of("카테고리1"))));
+
+
+        // when
+        PostDetailResponse response = blogPostService.getPostDetail("caboom", 1L, testMember.getMbNo());
+
+        // then
+        Assertions.assertEquals("제목", response.getTitle());
+    }
+
+    @Test
+    @DisplayName("비공개 게시글 단일조회 실패 - 블로그 소유자 또는 멤버가 아님")
+    void getPostDetailFail_Unauthenticated() {
+        // given
+        Post post = Post.ofNewPost(testBlog, testMember, "제목", "안녕하세요",
+                false, null);
+        Mockito.when(postRepository.findByPostId(anyLong()))
+                .thenReturn(Optional.of(post));
+
+        // when & then
+        Assertions.assertThrows(UnauthenticatedException.class,
+                () -> blogPostService.getPostDetail("caboom", 1L, 200L));
+    }
+
+    @Test
+    @DisplayName("게시글 단일조회 실패 - 게시글이 블로그 소속이 아님")
+    void getPostDetailFail_BadRequest() {
+        // given
+        Post post = Post.ofNewPost(testBlog, testMember, "제목", "안녕하세요",
+                false, null);
+        Mockito.when(postRepository.findByPostId(anyLong()))
+                .thenReturn(Optional.of(post));
+
+        // when & then
+        Assertions.assertThrows(BadRequestException.class,
+                () -> blogPostService.getPostDetail("otherBlog", 1L, testMember.getMbNo()));
+    }
+
+    @Test
+    @DisplayName("공개 게시글 단일조회 성공 - 로그인하지 않았을때")
+    void getPostDetailSuccess_Private() {
+        // given
+        Post post = Post.ofNewPost(testBlog, testMember, "제목", "안녕하세요",
+                true, null);
+        Mockito.when(postRepository.findByPostId(anyLong()))
+                .thenReturn(Optional.of(post));
+        Mockito.when(postRepositoryCustom.findPostDetailById(anyLong()))
+                .thenReturn(Optional.of(new PostDetailResponse(1L,
+                        new TeamBlogMemberResponse(UUID.randomUUID().toString(), "작성자", "caboom"),
+                        null, "제목", "내용",
+                        true, 1L, null, null,
+                        List.of("카테고리1"))));
+
+
+        // when
+        PostDetailResponse response = blogPostService.getPostDetail("caboom", 1L, null);
+
+        // then
+        Assertions.assertEquals("내용", response.getContent());
+    }
+
+    @Test
+    @DisplayName("공개 게시글 단일조회 성공 - 로그인했지만 블로그 비회원일때")
+    void getPostDetailSuccess_Private_NonMember() {
+        // given
+        Post post = Post.ofNewPost(testBlog, testMember, "제목", "안녕하세요",
+                true, null);
+        Mockito.when(postRepository.findByPostId(anyLong()))
+                .thenReturn(Optional.of(post));
+        Mockito.when(postRepositoryCustom.findPostDetailById(anyLong()))
+                .thenReturn(Optional.of(new PostDetailResponse(1L,
+                        new TeamBlogMemberResponse(UUID.randomUUID().toString(), "작성자", "caboom"),
+                        null, "제목", "내용",
+                        true, 1L, null, null,
+                        List.of("카테고리1"))));
+
+        // when
+        PostDetailResponse response = blogPostService.getPostDetail("caboom", 100L, null);
+
+        // then
+        Assertions.assertEquals("내용", response.getContent());
+    }
+
 }
