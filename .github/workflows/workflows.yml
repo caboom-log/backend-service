@@ -35,6 +35,10 @@ jobs:
           spring.datasource.url: ${{ secrets.MYSQL_DATASOURCE_URL }}
           spring.datasource.username: ${{ secrets.MYSQL_USERNAME }}
           spring.datasource.password: ${{ secrets.MYSQL_PASSWORD }}
+          minio.url: ${{ secrets.MINIO_URL }}
+          minio.access-key: ${{ secrets.MINIO_ACCESS_KEY }}
+          minio.secret-key: ${{ secrets.MINIO_SECRET_KEY }}
+          minio.bucket: ${{ secrets.MINIO_BUCKET }}
 
       - name: Build with Maven
         run: |
