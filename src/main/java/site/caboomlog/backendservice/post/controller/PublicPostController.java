@@ -28,7 +28,7 @@ public class PublicPostController {
      * @return 게시글 목록 및 페이지 메타 정보 응답
      */
     @GetMapping("/blogs/{blogFid}/posts/public")
-    public ResponseEntity<ApiResponse<PostPageResponse<PostResponse>>> getAllPublicPosts(
+    public ResponseEntity<ApiResponse<PostPageResponse<PostResponse>>> getAllPublicBlogPosts(
             @PathVariable("blogFid") String blogFid,
             @PageableDefault(size = 5, page = 0, sort = "createdAt,desc") Pageable pageable) {
         Page<PostResponse> posts = publicPostService.getAllPublicPosts(blogFid, pageable);

@@ -70,7 +70,7 @@ public class PublicPostService {
                 );
 
                 return new PostResponse(p.postId(), p.blogFid(), p.title(), writer, p.summary(),
-                        p.thumbnail(), p.createdAt(), p.viewCount(), new ArrayList<>());
+                        p.thumbnail(), p.createdAt(), p.updatedAt(), p.viewCount(), new ArrayList<>());
             }).getCategoryNames().add(p.categoryName());
         }
         return new ArrayList<>(postMap.values());
