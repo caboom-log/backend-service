@@ -11,6 +11,12 @@ import site.caboomlog.backendservice.category.repository.CategoryRepository;
 import site.caboomlog.backendservice.common.exception.BadRequestException;
 import site.caboomlog.backendservice.common.exception.DatabaseException;
 import site.caboomlog.backendservice.common.exception.UnauthenticatedException;
+import site.caboomlog.backendservice.common.image.dto.ImageDto;
+import site.caboomlog.backendservice.common.image.entity.Image;
+import site.caboomlog.backendservice.common.image.entity.PostImageMapping;
+import site.caboomlog.backendservice.common.image.repository.ImageRepository;
+import site.caboomlog.backendservice.common.image.repository.PostImageMappingRepository;
+import site.caboomlog.backendservice.common.image.service.MinioService;
 import site.caboomlog.backendservice.post.dto.CreatePostRequest;
 import site.caboomlog.backendservice.post.dto.PostDetailResponse;
 import site.caboomlog.backendservice.post.entity.Post;
@@ -30,6 +36,9 @@ public class BlogPostService {
     private final CategoryRepository categoryRepository;
     private final PostCategoryMappingRepository postCategoryMappingRepository;
     private final PostRepositoryImpl postRepositoryCustom;
+    private final ImageRepository imageRepository;
+    private final PostImageMappingRepository postImageMappingRepository;
+    private final MinioService minioService;
 
     /**
      * 게시글을 생성합니다.
@@ -77,6 +86,22 @@ public class BlogPostService {
 
             PostCategoryMapping postCategoryMapping = PostCategoryMapping.ofNewPostCategoryMapping(category, post);
             postCategoryMappingRepository.save(postCategoryMapping);
+        }
+
+        if (request.getImages().size() > 3) {
+            for (ImageDto imageDto : request.getImages()) {
+                minioService.deleteFile(imageDto.getUrl());
+            }
+            throw new BadRequestException("이미지는 게시글당 최대 3개까지 첨부 가능합니다.");
+        }
+
+        for (ImageDto imageDto : request.getImages()) {
+            Image image = Image.ofNewImage(imageDto.getFilename(), imageDto.getSize(), imageDto.getUrl());
+            PostImageMapping postImageMapping = PostImageMapping.ofNewPostImageMapping(
+                    post, image, imageDto.getWidth(), imageDto.getHeight(), imageDto.getImageOrder()
+            );
+            imageRepository.save(image);
+            postImageMappingRepository.save(postImageMapping);
         }
     }
 

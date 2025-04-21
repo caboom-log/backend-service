@@ -5,6 +5,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import site.caboomlog.backendservice.common.image.dto.ImageDto;
 
 import java.util.List;
 
@@ -18,4 +19,5 @@ public class CreatePostRequest {
     private List<Long> categoryIds;
     private boolean postPublic;
     private String thumbnail;
+    private List<ImageDto> images;
 }
