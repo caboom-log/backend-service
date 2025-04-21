@@ -12,6 +12,7 @@ public record PostFlatProjection(
         String summary,
         String thumbnail,
         LocalDateTime createdAt,
+        LocalDateTime updatedAt,
         Long viewCount,
         String categoryName
 ) {

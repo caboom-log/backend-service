@@ -19,6 +19,8 @@ public class PostResponse {
     private String thumbnail;
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm")
     private LocalDateTime createdAt;
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm")
+    private LocalDateTime updatedAt;
     private Long viewCount;
     private List<String> categoryNames;
 }

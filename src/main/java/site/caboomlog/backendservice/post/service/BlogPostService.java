@@ -9,7 +9,14 @@ import site.caboomlog.backendservice.category.entity.Category;
 import site.caboomlog.backendservice.category.exception.CategoryNotFoundException;
 import site.caboomlog.backendservice.category.repository.CategoryRepository;
 import site.caboomlog.backendservice.common.exception.BadRequestException;
+import site.caboomlog.backendservice.common.exception.DatabaseException;
 import site.caboomlog.backendservice.common.exception.UnauthenticatedException;
+import site.caboomlog.backendservice.common.image.dto.ImageDto;
+import site.caboomlog.backendservice.common.image.entity.Image;
+import site.caboomlog.backendservice.common.image.entity.PostImageMapping;
+import site.caboomlog.backendservice.common.image.repository.ImageRepository;
+import site.caboomlog.backendservice.common.image.repository.PostImageMappingRepository;
+import site.caboomlog.backendservice.common.image.service.MinioService;
 import site.caboomlog.backendservice.post.dto.CreatePostRequest;
 import site.caboomlog.backendservice.post.dto.PostDetailResponse;
 import site.caboomlog.backendservice.post.entity.Post;
@@ -19,6 +26,8 @@ import site.caboomlog.backendservice.post.repository.PostCategoryMappingReposito
 import site.caboomlog.backendservice.post.repository.PostRepository;
 import site.caboomlog.backendservice.post.repository.PostRepositoryImpl;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class BlogPostService {
@@ -27,6 +36,9 @@ public class BlogPostService {
     private final CategoryRepository categoryRepository;
     private final PostCategoryMappingRepository postCategoryMappingRepository;
     private final PostRepositoryImpl postRepositoryCustom;
+    private final ImageRepository imageRepository;
+    private final PostImageMappingRepository postImageMappingRepository;
+    private final MinioService minioService;
 
     /**
      * 게시글을 생성합니다.
@@ -42,19 +54,17 @@ public class BlogPostService {
     @Transactional
     public void createPost(String blogFid, Long mbNo, CreatePostRequest request) {
         BlogMemberMapping ownerMapping = blogMemberMappingRepository.findByMember_MbNoAndBlog_BlogFid(mbNo, blogFid);
-        if (!("ROLE_OWNER".equalsIgnoreCase(ownerMapping.getRole().getRoleId()) ||
-        "ROLE_MEMBER".equalsIgnoreCase(ownerMapping.getRole().getRoleId()))) {
+        if (ownerMapping == null ||
+                !("ROLE_OWNER".equalsIgnoreCase(ownerMapping.getRole().getRoleId()) ||
+                "ROLE_MEMBER".equalsIgnoreCase(ownerMapping.getRole().getRoleId()))) {
             throw new UnauthenticatedException("포스팅은 블로그 회원만 작성할 수 있습니다.");
         }
 
-        if (request.getTitle().isBlank()) {
-            throw new BadRequestException("제목은 한 글자 이상 작성해주세요.");
-        }
         if (request.getCategoryIds().isEmpty()) {
             Category categoryNone = categoryRepository
                     .findByBlog_BlogFidAndAndCategoryName(blogFid, "카테고리 없음")
-                            .orElseThrow(() -> new RuntimeException("카테고리 없음 카테고리가 없음!"));
-            request.getCategoryIds().add(categoryNone.getCategoryId());
+                            .orElseThrow(() -> new DatabaseException("카테고리 없음 카테고리가 없음!"));
+            request.setCategoryIds(List.of(categoryNone.getCategoryId()));
         }
 
         Post post = Post.ofNewPost(ownerMapping.getBlog(), ownerMapping.getMember(),
@@ -68,12 +78,30 @@ public class BlogPostService {
             if (!blogFid.equals(category.getBlog().getBlogFid())) {
                 throw new BadRequestException("해당 카테고리가 블로그 소속이 아닙니다.");
             }
-            if (Boolean.FALSE.equals(category.getCategoryPublic()) && request.isPostPublic()) {
-                throw new BadRequestException("비공개 카테고리에는 공개 포스팅을 작성할 수 없습니다.");
+            if ((Boolean.FALSE.equals(category.getCategoryPublic())
+                    || Boolean.FALSE.equals(ownerMapping.getBlog().getBlogPublic()))
+                    && request.isPostPublic()) {
+                throw new BadRequestException("비공개 블로그/카테고리에는 공개 포스팅을 작성할 수 없습니다.");
             }
 
             PostCategoryMapping postCategoryMapping = PostCategoryMapping.ofNewPostCategoryMapping(category, post);
             postCategoryMappingRepository.save(postCategoryMapping);
+        }
+
+        if (request.getImages().size() > 3) {
+            for (ImageDto imageDto : request.getImages()) {
+                minioService.deleteFile(imageDto.getUrl());
+            }
+            throw new BadRequestException("이미지는 게시글당 최대 3개까지 첨부 가능합니다.");
+        }
+
+        for (ImageDto imageDto : request.getImages()) {
+            Image image = Image.ofNewImage(imageDto.getFilename(), imageDto.getSize(), imageDto.getUrl());
+            PostImageMapping postImageMapping = PostImageMapping.ofNewPostImageMapping(
+                    post, image, imageDto.getWidth(), imageDto.getHeight(), imageDto.getImageOrder()
+            );
+            imageRepository.save(image);
+            postImageMappingRepository.save(postImageMapping);
         }
     }
 

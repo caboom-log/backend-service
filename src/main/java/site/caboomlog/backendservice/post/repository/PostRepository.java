@@ -7,7 +7,7 @@ import site.caboomlog.backendservice.post.entity.Post;
 import java.util.Optional;
 
 public interface PostRepository extends JpaRepository<Post, Long>, PostRepositoryCustom {
-    @Query("SELECT p FROM Post p JOIN FETCH p.writer WHERE p.postId = ?1")
+    @Query("SELECT p FROM Post p JOIN FETCH p.writer JOIN FETCH p.blog WHERE p.postId = ?1")
     Optional<Post> findByPostId(Long postId);
 
     int countByPostPublic(boolean postPublic);

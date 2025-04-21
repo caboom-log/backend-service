@@ -65,6 +65,7 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
                                 .otherwise(post.postContent),
                         post.thumbnail,
                         post.createdAt,
+                        post.updatedAt,
                         post.viewCount,
                         category.categoryName
                 ))

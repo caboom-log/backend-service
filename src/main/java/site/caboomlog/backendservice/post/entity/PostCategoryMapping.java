@@ -1,10 +1,12 @@
 package site.caboomlog.backendservice.post.entity;
 
 import jakarta.persistence.*;
+import lombok.Getter;
 import site.caboomlog.backendservice.category.entity.Category;
 
 @Entity
 @Table(name = "post_category_mappings")
+@Getter
 public class PostCategoryMapping {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
