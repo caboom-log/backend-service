@@ -17,6 +17,10 @@ import site.caboomlog.backendservice.category.repository.CategoryRepository;
 import site.caboomlog.backendservice.common.exception.BadRequestException;
 import site.caboomlog.backendservice.common.exception.DatabaseException;
 import site.caboomlog.backendservice.common.exception.UnauthenticatedException;
+import site.caboomlog.backendservice.common.image.dto.ImageDto;
+import site.caboomlog.backendservice.common.image.repository.ImageRepository;
+import site.caboomlog.backendservice.common.image.repository.PostImageMappingRepository;
+import site.caboomlog.backendservice.common.image.service.MinioService;
 import site.caboomlog.backendservice.member.entity.Member;
 import site.caboomlog.backendservice.post.dto.CreatePostRequest;
 import site.caboomlog.backendservice.post.dto.PostDetailResponse;
@@ -31,6 +35,7 @@ import site.caboomlog.backendservice.topic.entity.Topic;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -49,6 +54,12 @@ class BlogPostServiceTest {
     PostCategoryMappingRepository postCategoryMappingRepository;
     @Mock
     PostRepositoryImpl postRepositoryCustom;
+    @Mock
+    ImageRepository imageRepository;
+    @Mock
+    PostImageMappingRepository postImageMappingRepository;
+    @Mock
+    MinioService minioService;
     @InjectMocks
     BlogPostService blogPostService;
     @Captor
@@ -62,6 +73,7 @@ class BlogPostServiceTest {
     Field categoryIdsField;
     Field postPublicField;
     Field thumbnailField;
+    Field imagesField;
 
     Blog testBlog = Blog.ofExistingBlog(1L, "caboom", true, "카붐로그",
             "안녕하세요", true, null, BlogType.TEAM);
@@ -89,11 +101,17 @@ class BlogPostServiceTest {
         postPublicField.setAccessible(true);
         thumbnailField = CreatePostRequest.class.getDeclaredField("thumbnail");
         thumbnailField.setAccessible(true);
+        imagesField = CreatePostRequest.class.getDeclaredField("images");
+        imagesField.setAccessible(true);
 
         titleField.set(request, "제목");
         contentField.set(request, "콘텐츠");
         categoryIdsField.set(request, List.of(1L, 2L));
         postPublicField.set(request, true);
+        imagesField.set(request, List.of(
+                new ImageDto("image1.jpg", 10000L, 720, 720, "https://caboomstore/1", 1),
+                new ImageDto("imgae2.jpg", 10000L, 720, 720, "https://caboomstore/2", 2)
+        ));
     }
 
     @Test
@@ -184,6 +202,28 @@ class BlogPostServiceTest {
     @DisplayName("게시글 작성 실패 - 비공개 카테고리")
     void writePostFail_PrivateCategoryPublicPost() {
         // given
+        Mockito.when(blogMemberMappingRepository.findByMember_MbNoAndBlog_BlogFid(any(), anyString()))
+                .thenReturn(BlogMemberMapping.ofNewBlogMemberMapping(
+                        testBlog, testMember, roleOwner, "소유자"
+                ));
+        Mockito.when(categoryRepository.findByCategoryId(anyLong()))
+                .thenReturn(Optional.of(testPrivateCategory));
+
+        // when & then
+        Assertions.assertThrows(BadRequestException.class,
+                () -> blogPostService.createPost("caboom", 1L, request));
+    }
+
+    @Test
+    @DisplayName("게시글 작성 실패 - 이미지 3개 초과")
+    void writePostFail_ImageMaxOver() throws Exception {
+        // given
+        List<ImageDto> images = new ArrayList<>();
+        images.add(new ImageDto("111.jpg", 10000L, 720, 720, null, 1));
+        images.add(new ImageDto("222.jpg", 10000L, 720, 720, null, 2));
+        images.add(new ImageDto("333.jpg", 10000L, 720, 720, null, 3));
+        images.add(new ImageDto("444.jpg", 10000L, 720, 720, null, 4));
+        imagesField.set(request, images);
         Mockito.when(blogMemberMappingRepository.findByMember_MbNoAndBlog_BlogFid(any(), anyString()))
                 .thenReturn(BlogMemberMapping.ofNewBlogMemberMapping(
                         testBlog, testMember, roleOwner, "소유자"
