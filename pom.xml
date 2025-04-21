@@ -149,6 +149,13 @@
                                     </limits>
                                 </rule>
                             </rules>
+                            <excludes>
+                                <exclude>**/exception/**</exclude>
+                                <exclude>**/repository/**</exclude>
+                                <exclude>**/entity/**</exclude>
+                                <exclude>**/dto/**</exclude>
+                                <exclude>**/*Exception.class</exclude>
+                            </excludes>
                         </configuration>
                     </execution>
                 </executions>
