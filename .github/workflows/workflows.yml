@@ -40,9 +40,9 @@ jobs:
           minio.secret-key: ${{ secrets.MINIO_SECRET_KEY }}
           minio.bucket: ${{ secrets.MINIO_BUCKET }}
 
-      - name: Build with Maven
+      - name: Build and Check Coverage
         run: |
-          mvn clean package -Dspring.profiles.active=prod
+          mvn clean verify -Dspring.profiles.active=prod
 
       - name: Log in to Docker Hub
         run: |
