@@ -96,6 +96,10 @@ public class Blog {
         newMain.setBlogMain();
     }
 
+    public void setBlogMainImg(String mainImg) {
+        this.blogMainImg = mainImg;
+    }
+
     public void modifyBlogInfo(String blogName, String blogDescription, boolean blogPublic) {
         if (blogName != null) {
             this.blogName = blogName;

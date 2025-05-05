@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import site.caboomlog.backendservice.blog.dto.BlogInfoResponse;
 import site.caboomlog.backendservice.blog.dto.CreateBlogRequest;
 import site.caboomlog.backendservice.blog.dto.ModifyBlogInfoRequest;
@@ -93,6 +94,50 @@ public class BlogCommonController {
         blogService.switchMainBlogTo(blogFid, mbNo);
         return ResponseEntity.ok()
                 .body(ApiResponse.ok(null));
+    }
+
+    /**
+     * 블로그의 메인이미지를 변경합니다.
+     *
+     * <p>해당 블로그의 OWNER 권한을 가진 회원만 요청할 수 있으며, 기존 메인이미지가 존재하는 경우 삭제 후 새 이미지로 교체됩니다.</p>
+     *
+     * @param blogFid 블로그 고유 식별자 (FID)
+     * @param mbNo 로그인한 회원의 고유 번호
+     * @param file 업로드할 이미지 파일 (multipart/form-data 형식)
+     * @return 메인이미지의 URL을 포함한 200 OK 응답
+     *
+     * @throws UnauthenticatedException 블로그 소유자가 아닌 경우
+     * @throws RuntimeException 이미지 업로드 중 오류가 발생한 경우
+     */
+    @PostMapping("/{blogFid}/mainImg")
+    public ResponseEntity<ApiResponse<String>> changeMainImg(@PathVariable("blogFid") String blogFid,
+                                                           @LoginMember Long mbNo,
+                                                           @RequestPart("file") MultipartFile file) {
+        String mainImgUrl = blogService.changeMainImg(blogFid, mbNo, file);
+        return ResponseEntity.ok(
+                ApiResponse.ok(mainImgUrl)
+        );
+    }
+
+
+    /**
+     * 블로그의 메인이미지를 삭제합니다.
+     *
+     * <p>해당 블로그의 OWNER 권한을 가진 회원만 요청할 수 있으며, 삭제 시 메인이미지 경로는 null로 변경됩니다.</p>
+     *
+     * @param blogFid 블로그 고유 식별자 (FID)
+     * @param mbNo 로그인한 회원의 고유 번호
+     * @return 삭제 완료 후 200 OK 응답
+     *
+     * @throws UnauthenticatedException 블로그 소유자가 아닌 경우
+     * @throws RuntimeException 이미지 삭제 중 오류가 발생한 경우
+     */
+    @DeleteMapping("/{blogFid}/mainImg")
+    public ResponseEntity<ApiResponse<Void>> deleteMainImg(@PathVariable("blogFid") String blogFid,
+                                                             @LoginMember Long mbNo) {
+        blogService.deleteMainImg(blogFid, mbNo);
+        return ResponseEntity.ok(
+                ApiResponse.ok(null));
     }
 
     /**
