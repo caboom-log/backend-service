@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 import site.caboomlog.backendservice.blog.dto.TeamBlogMemberResponse;
 import site.caboomlog.backendservice.blog.entity.Blog;
 import site.caboomlog.backendservice.blog.entity.BlogType;
@@ -34,7 +35,6 @@ import site.caboomlog.backendservice.role.entity.Role;
 import site.caboomlog.backendservice.topic.entity.Topic;
 
 import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -68,12 +68,6 @@ class BlogPostServiceTest {
     ArgumentCaptor<PostCategoryMapping> postCategoryMappingArgumentCaptor;
 
     CreatePostRequest request;
-    Field titleField;
-    Field contentField;
-    Field categoryIdsField;
-    Field postPublicField;
-    Field thumbnailField;
-    Field imagesField;
 
     Blog testBlog = Blog.ofExistingBlog(1L, "caboom", true, "카붐로그",
             "안녕하세요", true, null, BlogType.TEAM);
@@ -91,24 +85,12 @@ class BlogPostServiceTest {
         Constructor<CreatePostRequest> constructor = CreatePostRequest.class.getDeclaredConstructor();
         constructor.setAccessible(true);
         request = constructor.newInstance();
-        titleField = CreatePostRequest.class.getDeclaredField("title");
-        titleField.setAccessible(true);
-        contentField = CreatePostRequest.class.getDeclaredField("content");
-        contentField.setAccessible(true);
-        categoryIdsField = CreatePostRequest.class.getDeclaredField("categoryIds");
-        categoryIdsField.setAccessible(true);
-        postPublicField = CreatePostRequest.class.getDeclaredField("postPublic");
-        postPublicField.setAccessible(true);
-        thumbnailField = CreatePostRequest.class.getDeclaredField("thumbnail");
-        thumbnailField.setAccessible(true);
-        imagesField = CreatePostRequest.class.getDeclaredField("images");
-        imagesField.setAccessible(true);
 
-        titleField.set(request, "제목");
-        contentField.set(request, "콘텐츠");
-        categoryIdsField.set(request, List.of(1L, 2L));
-        postPublicField.set(request, true);
-        imagesField.set(request, List.of(
+        ReflectionTestUtils.setField(request, "title", "제목");
+        ReflectionTestUtils.setField(request, "content", "콘텐츠");
+        ReflectionTestUtils.setField(request, "categoryIds", List.of(1L, 2L));
+        ReflectionTestUtils.setField(request, "postPublic", true);
+        ReflectionTestUtils.setField(request, "images", List.of(
                 new ImageDto("image1.jpg", 10000L, 720, 720, "https://caboomstore/1", 1),
                 new ImageDto("imgae2.jpg", 10000L, 720, 720, "https://caboomstore/2", 2)
         ));
@@ -151,7 +133,7 @@ class BlogPostServiceTest {
                 .thenReturn(BlogMemberMapping.ofNewBlogMemberMapping(
                         testBlog, testMember, roleOwner, "소유자"
                 ));
-        categoryIdsField.set(request, List.of());
+        ReflectionTestUtils.setField(request, "categoryIds", List.of());
         Mockito.when(categoryRepository.findByBlog_BlogFidAndAndCategoryName(anyString(), anyString()))
                 .thenReturn(Optional.empty());
 
@@ -223,7 +205,7 @@ class BlogPostServiceTest {
         images.add(new ImageDto("222.jpg", 10000L, 720, 720, null, 2));
         images.add(new ImageDto("333.jpg", 10000L, 720, 720, null, 3));
         images.add(new ImageDto("444.jpg", 10000L, 720, 720, null, 4));
-        imagesField.set(request, images);
+        ReflectionTestUtils.setField(request, "images", images);
         Mockito.when(blogMemberMappingRepository.findByMember_MbNoAndBlog_BlogFid(any(), anyString()))
                 .thenReturn(BlogMemberMapping.ofNewBlogMemberMapping(
                         testBlog, testMember, roleOwner, "소유자"
@@ -240,20 +222,21 @@ class BlogPostServiceTest {
     @DisplayName("게시글 작성 성공 - 카테고리 선택 안하면 기본 카테고리로 등록됨")
     void writePostSuccess_NoCategorySelect() throws Exception {
         // given
-        categoryIdsField.set(request, List.of());
+        ReflectionTestUtils.setField(request, "categoryIds", List.of());
         Mockito.when(blogMemberMappingRepository.findByMember_MbNoAndBlog_BlogFid(any(), anyString()))
                 .thenReturn(BlogMemberMapping.ofNewBlogMemberMapping(
                         testBlog, testMember, roleOwner, "소유자"
                 ));
         Category noneCategory = Category.ofNewCategory(testBlog, null, null, "카테고리 없음",
                 true, 0, 0);
-        Field categoryIdField = Category.class.getDeclaredField("categoryId");
-        categoryIdField.setAccessible(true);
-        categoryIdField.set(noneCategory, 1L);
+        ReflectionTestUtils.setField(noneCategory, "categoryId", 1L);
         Mockito.when(categoryRepository.findByBlog_BlogFidAndAndCategoryName(anyString(), anyString()))
                 .thenReturn(Optional.of(noneCategory));
         Mockito.when(categoryRepository.findByCategoryId(anyLong()))
                 .thenReturn(Optional.of(noneCategory));
+        Post post = Post.ofNewPost(testBlog, testMember, "제목", "컨텐츠", true, null);
+        ReflectionTestUtils.setField(post, "postId", 1L);
+        Mockito.when(postRepository.save(any())).thenReturn(post);
 
         // when
         blogPostService.createPost("caboom", 1L, request);
@@ -275,6 +258,9 @@ class BlogPostServiceTest {
                 ));
         Mockito.when(categoryRepository.findByCategoryId(anyLong()))
                 .thenReturn(Optional.of(testPublicCategory));
+        Post post = Post.ofNewPost(testBlog, testMember, "제목", "컨텐츠", true, null);
+        ReflectionTestUtils.setField(post, "postId", 1L);
+        Mockito.when(postRepository.save(any())).thenReturn(post);
 
         // when
         blogPostService.createPost("caboom", 1L, request);

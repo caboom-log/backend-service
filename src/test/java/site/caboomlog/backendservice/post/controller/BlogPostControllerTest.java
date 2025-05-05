@@ -195,8 +195,9 @@ class BlogPostControllerTest {
     void writePostSuccess() throws Exception {
         // given
         Mockito.when(memberRepository.findByMbUuid(anyString())).thenReturn(Optional.of(testMember));
-        Mockito.doNothing()
-                .when(blogPostService).createPost(anyString(), anyLong(), any());
+        Mockito.when(blogPostService.createPost(anyString(), anyLong(), any()))
+                        .thenReturn(1L);
+
         // when & then
         mockMvc.perform(post("/api/blogs/caboom/posts")
                         .header("X-Caboomlog-UID", UUID.randomUUID().toString())
