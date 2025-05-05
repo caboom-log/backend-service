@@ -4,7 +4,6 @@ spring:
     url:
     username:
     password:
-
   jpa:
     hibernate:
       ddl-auto: none
@@ -21,3 +20,4 @@ minio:
   access-key:
   secret-key:
   bucket:
+  secure: true
