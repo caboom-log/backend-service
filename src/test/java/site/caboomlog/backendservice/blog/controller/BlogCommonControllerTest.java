@@ -14,6 +14,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
@@ -28,6 +29,7 @@ import site.caboomlog.backendservice.blog.service.BlogService;
 import site.caboomlog.backendservice.common.annotation.LoginMemberArgumentResolver;
 import site.caboomlog.backendservice.common.advice.CommonControllerAdvice;
 import site.caboomlog.backendservice.common.exception.BadRequestException;
+import site.caboomlog.backendservice.common.exception.UnauthenticatedException;
 import site.caboomlog.backendservice.common.interceptor.AuthHeaderInterceptor;
 import site.caboomlog.backendservice.member.entity.Member;
 import site.caboomlog.backendservice.member.exception.MemberNotFoundException;
@@ -69,6 +71,14 @@ class BlogCommonControllerTest {
             Member.ofExistingMember(1L, "test@test.com",
             "caboom", "testpwd",
             "010-0000-1111", null, null));
+
+
+    MockMultipartFile file = new MockMultipartFile(
+            "file",
+            "test-image.jpg",
+            "image/jpeg",
+            "fake image content".getBytes()
+    );
 
     @TestConfiguration
     static class MockConfig {
@@ -543,5 +553,69 @@ class BlogCommonControllerTest {
                 .andExpect(jsonPath("$.content[0].blogFid").value("test-fid-1"))
                 .andExpect(jsonPath("$.content[0].blogType").value("team"))
                 .andExpect(jsonPath("$.content[1].blogType").value("personal"));
+    }
+
+    @Test
+    @DisplayName("블로그 메인이미지 변경 실패 - 권한 없음")
+    void changeBlogMainImgFail_Unauthenticated() throws Exception {
+        // given
+        Mockito.when(memberRepository.findByMbUuid(anyString())).thenReturn(testMember);
+        Mockito.when(blogService.changeMainImg(anyString(), anyLong(), any()))
+                .thenThrow(new UnauthenticatedException(""));
+
+        // when & then
+        mockMvc.perform(multipart("/api/blogs/caboom/mainImg")
+                        .file(file)
+                        .header("X-Caboomlog-UID", UUID.randomUUID().toString()))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.status").value("ERROR"));
+    }
+
+    @Test
+    @DisplayName("블로그 메인이미지 변경 성공")
+    void changeBlogMainImg() throws Exception {
+        // given
+        Mockito.when(memberRepository.findByMbUuid(anyString())).thenReturn(testMember);
+        String mainImgUrl = "https://caboomlog/asdf/asdf.jpg";
+        Mockito.when(blogService.changeMainImg(anyString(), anyLong(), any()))
+                .thenReturn(mainImgUrl);
+
+        // when & then
+        mockMvc.perform(multipart("/api/blogs/caboom/mainImg")
+                        .file(file)
+                        .header("X-Caboomlog-UID", UUID.randomUUID().toString()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("SUCCESS"))
+                .andExpect(jsonPath("$.content").value(mainImgUrl));
+    }
+
+    @Test
+    @DisplayName("블로그 메인이미지 삭제 실패 - 권한 없음")
+    void deleteBlogMainImgFail_Unauthenticated() throws Exception {
+        // given
+        Mockito.when(memberRepository.findByMbUuid(anyString())).thenReturn(testMember);
+        Mockito.doThrow(new UnauthenticatedException(""))
+                .when(blogService).deleteMainImg(anyString(), anyLong());
+
+        // when & then
+        mockMvc.perform(delete("/api/blogs/caboom/mainImg")
+                        .header("X-Caboomlog-UID", UUID.randomUUID().toString()))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.status").value("ERROR"));
+    }
+
+    @Test
+    @DisplayName("블로그 메인이미지 삭제 성공")
+    void deleteBlogMainImg() throws Exception {
+        // given
+        Mockito.when(memberRepository.findByMbUuid(anyString())).thenReturn(testMember);
+        Mockito.doNothing()
+                .when(blogService).deleteMainImg(anyString(), anyLong());
+
+        // when & then
+        mockMvc.perform(delete("/api/blogs/caboom/mainImg")
+                        .header("X-Caboomlog-UID", UUID.randomUUID().toString()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("SUCCESS"));
     }
 }

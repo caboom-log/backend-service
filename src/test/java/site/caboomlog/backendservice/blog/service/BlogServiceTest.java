@@ -9,6 +9,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.mock.web.MockMultipartFile;
 import site.caboomlog.backendservice.blog.dto.BlogInfoResponse;
 import site.caboomlog.backendservice.blog.dto.CreateBlogRequest;
 import site.caboomlog.backendservice.blog.dto.ModifyBlogInfoRequest;
@@ -22,6 +23,8 @@ import site.caboomlog.backendservice.blogmember.repository.BlogMemberMappingRepo
 import site.caboomlog.backendservice.category.repository.CategoryRepository;
 import site.caboomlog.backendservice.common.exception.BadRequestException;
 import site.caboomlog.backendservice.common.exception.UnauthenticatedException;
+import site.caboomlog.backendservice.common.image.dto.ImageDto;
+import site.caboomlog.backendservice.common.image.service.ImageUploadService;
 import site.caboomlog.backendservice.member.entity.Member;
 import site.caboomlog.backendservice.member.exception.MemberNotFoundException;
 import site.caboomlog.backendservice.member.repository.MemberRepository;
@@ -46,6 +49,8 @@ class BlogServiceTest {
     RoleRepository roleRepository;
     @Mock
     CategoryRepository categoryRepository;
+    @Mock
+    ImageUploadService imageUploadService;
     @InjectMocks
     BlogService blogService;
 
@@ -57,6 +62,9 @@ class BlogServiceTest {
     Blog testBlog = Blog.ofExistingBlog(1L, "caboom", true,
             "카붐로그", "안녕하세요", true,
             null, BlogType.valueOf("PERSONAL"));
+    MockMultipartFile file = new MockMultipartFile(
+            "file", "test.jpg", "image/jpeg", "test fake file".getBytes()
+    );
 
     @Test
     @DisplayName("블로그 정보 조회 성공")
@@ -291,4 +299,79 @@ class BlogServiceTest {
         Assertions.assertEquals(testBlog.getBlogName(), response.get(0).getBlogName());
         Assertions.assertEquals(testBlog.getBlogType().name(), response.get(0).getBlogType());
     }
+
+    @Test
+    @DisplayName("블로그 메인이미지 변경 실패 - 소유자가 아님")
+    void changeMainImgFail_Unauthenticated() {
+        // given
+        BlogMemberMapping mapping = BlogMemberMapping.ofNewBlogMemberMapping(
+                testBlog, testMember,
+                Role.ofNewRole("ROLE_MEMBER", "블로그_멤버", "세연"), "임새");
+        Mockito.when(blogMemberMappingRepository.findByMember_MbNoAndBlog_BlogFid(anyLong(), anyString()))
+                .thenReturn(mapping);
+
+        // when & then
+        Assertions.assertThrows(UnauthenticatedException.class,
+                () -> blogService.changeMainImg("caboom", 1L, file));
+    }
+
+    @Test
+    @DisplayName("블로그 메인이미지 변경 성공")
+    void changeMainImgSuccess() throws Exception {
+        // given
+        BlogMemberMapping mapping = BlogMemberMapping.ofNewBlogMemberMapping(
+                testBlog, testMember, roleOwner, "임새");
+
+        Mockito.when(blogMemberMappingRepository.findByMember_MbNoAndBlog_BlogFid(anyLong(), anyString()))
+                .thenReturn(mapping);
+
+        String uploadedUrl = "https://minio.caboomlog.site/testBucket/asdf/test.jpg";
+        ImageDto uploadedDto = new ImageDto("test.jpg", 1234L, 100, 100, uploadedUrl, null);
+        Mockito.when(imageUploadService.uploadBlogMainImage(anyString(), any())).thenReturn(uploadedDto);
+
+        // when
+        String result = blogService.changeMainImg("caboom", 1L, file);
+
+        // then
+        Assertions.assertEquals(uploadedUrl, result);
+        Assertions.assertEquals(uploadedUrl, testBlog.getBlogMainImg());
+    }
+
+    @Test
+    @DisplayName("블로그 메인이미지 삭제 실패 - 소유자가 아님")
+    void deleteMainImgFail_Unauthenticated() {
+        // given
+        BlogMemberMapping mapping = BlogMemberMapping.ofNewBlogMemberMapping(
+                testBlog, testMember,
+                Role.ofNewRole("ROLE_MEMBER", "블로그_멤버", "세연"), "임새"
+        );
+        Mockito.when(blogMemberMappingRepository.findByMember_MbNoAndBlog_BlogFid(anyLong(), anyString()))
+                .thenReturn(mapping);
+
+        // when & then
+        Assertions.assertThrows(UnauthenticatedException.class,
+                () -> blogService.deleteMainImg("caboom", 1L));
+    }
+
+    @Test
+    @DisplayName("블로그 메인이미지 삭제 성공")
+    void deleteMainImgSuccess() {
+        // given
+        String existingImgUrl = "https://minio.caboomlog.site/testBucket/test.jpg";
+        testBlog.setBlogMainImg(existingImgUrl);
+
+        BlogMemberMapping mapping = BlogMemberMapping.ofNewBlogMemberMapping(
+                testBlog, testMember, roleOwner, "임새");
+
+        Mockito.when(blogMemberMappingRepository.findByMember_MbNoAndBlog_BlogFid(anyLong(), anyString()))
+                .thenReturn(mapping);
+
+        // when
+        Assertions.assertDoesNotThrow(() -> blogService.deleteMainImg("caboom", 1L));
+
+        // then
+        Assertions.assertNull(testBlog.getBlogMainImg());
+        Mockito.verify(imageUploadService).deleteFile(existingImgUrl);
+    }
+
 }
