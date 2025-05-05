@@ -20,7 +20,7 @@ public class ImageUploadController {
 
     @PostMapping
     public ResponseEntity<ApiResponse<ImageDto>> upload(@LoginMember Long mbNo,
-                                                      @RequestPart("file")MultipartFile file) throws Exception {
+                                                      @RequestPart("file") MultipartFile file) throws Exception {
         ImageDto image = imageUploadService.uploadFile(mbNo, file);
         return ResponseEntity.ok()
                 .body(ApiResponse.ok(image));

@@ -44,7 +44,7 @@ public class MinioService implements ImageUploadService {
                 .bucket(bucketName)
                 .object(filePath)
                 .contentType(file.getContentType())
-                .stream(file.getInputStream(), file.getSize() - 1, 5 * 1024 * 1024)
+                .stream(file.getInputStream(), file.getSize(), 5 * 1024 * 1024)
                 .build();
         minioClient.putObject(objectArgs);
 
@@ -53,7 +53,7 @@ public class MinioService implements ImageUploadService {
         int width = bufferedImage.getWidth();
         int height = bufferedImage.getHeight();
 
-        String imageUrl = String.format("%s/%s/%s", minioUrl, bucketName, filePath);
+        String imageUrl = String.format("%s/%s/%s", "https://minio.caboomlog.site", bucketName, filePath);
         return new ImageDto(originalFilename, size, width, height, imageUrl, null);
     }
 
@@ -66,7 +66,7 @@ public class MinioService implements ImageUploadService {
                     .object(objectName)
                     .build());
         } catch (Exception e) {
-            log.error("파일 삭제 실패: {}", objectName, e);
+            log.error("파일 삭제 실패: {}", url, e);
         }
     }
 
