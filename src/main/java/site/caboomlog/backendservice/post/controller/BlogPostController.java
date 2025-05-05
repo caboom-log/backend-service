@@ -27,14 +27,14 @@ public class BlogPostController {
      * @return 201 Created 응답
      */
     @PostMapping
-    public ResponseEntity<ApiResponse<Void>> writePost(@PathVariable("blogFid") String blogFid,
+    public ResponseEntity<ApiResponse<Long>> writePost(@PathVariable("blogFid") String blogFid,
                                                  @LoginMember Long mbNo,
                                                  @RequestBody @Valid CreatePostRequest request) {
-        blogPostService.createPost(blogFid, mbNo, request);
+        long savedPostId = blogPostService.createPost(blogFid, mbNo, request);
         log.info("post request: {}", request);
 
         return ResponseEntity.status(201)
-                .body(ApiResponse.created());
+                .body(ApiResponse.created(savedPostId, null));
     }
 
     /**

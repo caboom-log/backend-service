@@ -52,7 +52,7 @@ public class BlogPostService {
      * @throws BadRequestException 제목이 없거나 카테고리 유효성 실패
      */
     @Transactional
-    public void createPost(String blogFid, Long mbNo, CreatePostRequest request) {
+    public long createPost(String blogFid, Long mbNo, CreatePostRequest request) {
         BlogMemberMapping ownerMapping = blogMemberMappingRepository.findByMember_MbNoAndBlog_BlogFid(mbNo, blogFid);
         if (ownerMapping == null ||
                 !("ROLE_OWNER".equalsIgnoreCase(ownerMapping.getRole().getRoleId()) ||
@@ -69,7 +69,7 @@ public class BlogPostService {
 
         Post post = Post.ofNewPost(ownerMapping.getBlog(), ownerMapping.getMember(),
                 request.getTitle(), request.getContent(), request.isPostPublic(), request.getThumbnail());
-        postRepository.save(post);
+        Post savedPost = postRepository.save(post);
 
         for (Long categoryId : request.getCategoryIds()) {
             Category category = categoryRepository
@@ -103,6 +103,7 @@ public class BlogPostService {
             imageRepository.save(image);
             postImageMappingRepository.save(postImageMapping);
         }
+        return savedPost.getPostId();
     }
 
     /**
