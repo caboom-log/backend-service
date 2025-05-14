@@ -20,6 +20,27 @@
         </encoder>
     </appender>
 
+    <appender name="DISCOVERY_LOG" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_PATH}/discovery.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_PATH}/discovery.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <maxHistory>7</maxHistory>
+        </rollingPolicy>
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <logger name="com.netflix.discovery" level="DEBUG" additivity="false">
+        <appender-ref ref="DISCOVERY_LOG"/>
+    </logger>
+    <logger name="org.apache.hc" level="INFO" additivity="false">
+        <appender-ref ref="DISCOVERY_LOG"/>
+    </logger>
+    <logger name="org.springframework.cloud.netflix.eureka" level="INFO" additivity="false">
+        <appender-ref ref="DISCOVERY_LOG"/>
+    </logger>
+
     <appender name="ROOT_LOG" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${LOG_PATH}/root.log</file>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
