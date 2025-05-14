@@ -1,0 +1,42 @@
+<configuration>
+
+    <logger name="com.zaxxer.hikari" level="DEBUG" additivity="false">
+        <appender-ref ref="HIKARI_LOG"/>
+    </logger>
+    <logger name="com.mysql.cj.protocol" level="DEBUG"/>
+    <logger name="com.mysql.cj.jdbc" level="DEBUG"/>
+    <logger name="com.mysql.cj.NativeProtocol" level="DEBUG"/>
+    <logger name="com.mysql.cj.ConnectionImpl" level="DEBUG"/>
+    <appender name="HIKARI_LOG" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>/caboomlog/backend-service/logs/hikari.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>/caboomlog/backend-service/logs/hikari.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <maxHistory>7</maxHistory>
+        </rollingPolicy>
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+
+    <appender name="ROOT_LOG" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>/caboomlog/backend-service/logs/root.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>/caboomlog/backend-service/logs/root.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <maxHistory>7</maxHistory>
+        </rollingPolicy>
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+    <root level="DEBUG">
+        <appender-ref ref="ROOT_LOG"/>
+        <appender-ref ref="CONSOLE"/>
+    </root>
+
+</configuration>
