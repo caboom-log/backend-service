@@ -3,6 +3,7 @@ package site.caboomlog.backendservice.blog.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 import site.caboomlog.backendservice.blog.dto.BlogInfoResponse;
 import site.caboomlog.backendservice.blog.dto.CreateBlogRequest;
 import site.caboomlog.backendservice.blog.dto.ModifyBlogInfoRequest;
@@ -19,6 +20,8 @@ import site.caboomlog.backendservice.category.entity.Category;
 import site.caboomlog.backendservice.category.repository.CategoryRepository;
 import site.caboomlog.backendservice.common.exception.BadRequestException;
 import site.caboomlog.backendservice.common.exception.UnauthenticatedException;
+import site.caboomlog.backendservice.common.image.dto.ImageDto;
+import site.caboomlog.backendservice.common.image.service.ImageUploadService;
 import site.caboomlog.backendservice.member.entity.Member;
 import site.caboomlog.backendservice.member.exception.MemberNotFoundException;
 import site.caboomlog.backendservice.member.repository.MemberRepository;
@@ -38,6 +41,8 @@ public class BlogService {
     private final MemberRepository memberRepository;
     private final RoleRepository roleRepository;
     private final CategoryRepository categoryRepository;
+
+    private final ImageUploadService imageUploadService;
 
     /**
      * 블로그 FID를 기준으로 블로그 정보를 조회하여 응답 DTO로 반환합니다.
@@ -254,5 +259,68 @@ public class BlogService {
                 .map(info -> new MyBlogInfoResponse(
                         info.getBlog().getBlogFid(), info.getBlog().getBlogName(), info.getBlog().getBlogType().name()))
                 .toList();
+    }
+
+    /**
+     * 블로그의 메인이미지를 변경합니다.
+     *
+     * <p>기존 메인이미지가 존재할 경우 MinIO에서 삭제 후, 새 이미지를 업로드하여 경로를 갱신합니다.<br>
+     * 해당 블로그의 OWNER 권한이 있는 사용자만 변경할 수 있습니다.</p>
+     *
+     * @param blogFid 블로그 고유 식별자 (FID)
+     * @param mbNo 로그인한 회원의 고유 번호
+     * @param file 새로 업로드할 이미지 파일
+     * @return 새롭게 등록된 메인이미지의 URL
+     *
+     * @throws UnauthenticatedException 블로그 소유자가 아닌 경우
+     * @throws RuntimeException 이미지 업로드 또는 삭제 중 오류가 발생한 경우
+     */
+    @Transactional
+    public String changeMainImg(String blogFid, Long mbNo, MultipartFile file) {
+        BlogMemberMapping mapping = blogMemberMappingRepository.findByMember_MbNoAndBlog_BlogFid(mbNo, blogFid);
+        if (!mapping.getRole().getRoleId().equalsIgnoreCase("ROLE_OWNER")) {
+            throw new UnauthenticatedException("블로그 소유자가 아닙니다.");
+        }
+        Blog blog = mapping.getBlog();
+        String oldMainImg = blog.getBlogMainImg();
+        if (oldMainImg != null) {
+            imageUploadService.deleteFile(oldMainImg);
+        }
+        try {
+            ImageDto imageDto = imageUploadService.uploadBlogMainImage(blogFid, file);
+            String newMainImg = imageDto.getUrl();
+            blog.setBlogMainImg(newMainImg);
+            return newMainImg;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * 블로그의 메인이미지를 삭제합니다.
+     *
+     * <p>MinIO에서 기존 이미지를 삭제하고, 블로그의 `blogMainImg` 필드를 null로 설정합니다.<br>
+     * 해당 블로그의 OWNER 권한이 있는 사용자만 삭제할 수 있습니다.</p>
+     *
+     * @param blogFid 블로그 고유 식별자 (FID)
+     * @param mbNo 로그인한 회원의 고유 번호
+     *
+     * @throws UnauthenticatedException 블로그 소유자가 아닌 경우
+     * @throws RuntimeException 이미지 삭제 중 오류가 발생한 경우
+     */
+    @Transactional
+    public void deleteMainImg(String blogFid, Long mbNo) {
+        BlogMemberMapping mapping = blogMemberMappingRepository.findByMember_MbNoAndBlog_BlogFid(mbNo, blogFid);
+        if (!mapping.getRole().getRoleId().equalsIgnoreCase("ROLE_OWNER")) {
+            throw new UnauthenticatedException("블로그 소유자가 아닙니다.");
+        }
+        Blog blog = mapping.getBlog();
+        String oldMainImg = blog.getBlogMainImg();
+        try {
+            imageUploadService.deleteFile(oldMainImg);
+            blog.setBlogMainImg(null);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 }

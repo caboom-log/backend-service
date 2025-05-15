@@ -70,6 +70,27 @@ public class MinioService implements ImageUploadService {
         }
     }
 
+    public ImageDto uploadBlogMainImage(String blogFid, MultipartFile file) throws Exception {
+        String originalFilename = URLEncoder.encode(file.getOriginalFilename(), StandardCharsets.UTF_8);
+        String filePath = String.format("blogs/%s/main.jpg", blogFid); // 항상 덮어쓰기
+        PutObjectArgs objectArgs = PutObjectArgs.builder()
+                .bucket(bucketName)
+                .object(filePath)
+                .contentType(file.getContentType())
+                .stream(file.getInputStream(), file.getSize(), 5 * 1024 * 1024)
+                .build();
+        minioClient.putObject(objectArgs);
+
+        BufferedImage bufferedImage = ImageIO.read(file.getInputStream());
+        long size = file.getSize();
+        int width = bufferedImage.getWidth();
+        int height = bufferedImage.getHeight();
+
+        String imageUrl = String.format("https://minio.caboomlog.site/%s/%s", bucketName, filePath);
+        return new ImageDto(originalFilename, size, width, height, imageUrl, null);
+    }
+
+
     private String extractObjectName(String fileUrl) {
         return fileUrl.substring(fileUrl.indexOf(bucketName) + bucketName.length() + 1);
     }
