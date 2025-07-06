@@ -2,7 +2,7 @@ package site.caboomlog.backendservice.comment.entity;
 
 import jakarta.persistence.*;
 import lombok.Getter;
-import site.caboomlog.backendservice.member.entity.Member;
+import site.caboomlog.backendservice.blogmember.entity.BlogMemberMapping;
 import site.caboomlog.backendservice.post.entity.Post;
 
 import java.time.LocalDateTime;
@@ -23,9 +23,9 @@ public class Comment {
     @ManyToOne
     private Post post;
 
-    @JoinColumn(name = "mb_no")
+    @JoinColumn(name = "blog_member_mapping_id")
     @OneToOne
-    private Member member;
+    private BlogMemberMapping blogMemberMapping;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;

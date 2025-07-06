@@ -11,8 +11,6 @@ import site.caboomlog.backendservice.comment.entity.Comment;
 import site.caboomlog.backendservice.comment.repository.CommentRepository;
 import site.caboomlog.backendservice.role.entity.Role;
 
-import java.util.List;
-
 @Service
 @RequiredArgsConstructor
 public class CommentService {
@@ -30,7 +28,7 @@ public class CommentService {
             return comments.map(c -> {
                 CommentResponse commentResponse = CommentResponse.fromEntity(c);
                 BlogMemberMapping blogMemberMapping = blogMemberMappingRepository
-                        .findByMember_MbNoAndBlog_BlogMain(c.getMember().getMbNo(), true);
+                        .findByMember_MbNoAndBlog_BlogMain(c.getBlogMemberMapping().getMember().getMbNo(), true);
                 commentResponse.setMbProfile(blogMemberMapping.getBlog().getBlogMainImg());
                 commentResponse.setMbNickname(blogMemberMapping.getMbNickname());
                 commentResponse.setMbMainBlogFid(blogMemberMapping.getBlog().getBlogFid());
@@ -41,7 +39,7 @@ public class CommentService {
             return comments.map(c -> {
                 CommentResponse commentResponse = CommentResponse.fromEntityWithMasking(c);
                 BlogMemberMapping blogMemberMapping = blogMemberMappingRepository
-                        .findByMember_MbNoAndBlog_BlogMain(c.getMember().getMbNo(), true);
+                        .findByMember_MbNoAndBlog_BlogMain(c.getBlogMemberMapping().getMember().getMbNo(), true);
                 commentResponse.setMbProfile(blogMemberMapping.getBlog().getBlogMainImg());
                 commentResponse.setMbNickname(blogMemberMapping.getMbNickname());
                 commentResponse.setMbMainBlogFid(blogMemberMapping.getBlog().getBlogFid());
