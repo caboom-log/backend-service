@@ -45,8 +45,8 @@ public class CommentResponse {
                 comment.getDeletedAt(),
                 comment.getContent(),
                 comment.isCommentPublic(),
-                null,
-                null,
+                comment.getBlogMemberMapping().getMbNickname(),
+                comment.getBlogMemberMapping().getBlog().getBlogMainImg(),
                 null
         );
     }

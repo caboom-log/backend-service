@@ -41,4 +41,27 @@ public class Comment {
 
     @Column(name = "comment_public", columnDefinition = "tinyint")
     private boolean commentPublic;
+
+    protected Comment(){}
+
+    private Comment(Long commentId, Long parentCommentId, Post post, BlogMemberMapping blogMemberMapping,
+                    LocalDateTime createdAt, LocalDateTime updatedAt, LocalDateTime deletedAt,
+                    String content, boolean commentPublic) {
+        this.commentId = commentId;
+        this.parentCommentId = parentCommentId;
+        this.post = post;
+        this.blogMemberMapping = blogMemberMapping;
+        this.createdAt = createdAt;
+        this.updatedAt = updatedAt;
+        this.deletedAt = deletedAt;
+        this.content = content;
+        this.commentPublic = commentPublic;
+    }
+
+    public static Comment ofNewComment(Long parentCommentId, Post post, BlogMemberMapping blogMemberMapping,
+                                       String content, boolean commentPublic) {
+        return new Comment(null, parentCommentId, post, blogMemberMapping,
+                LocalDateTime.now(), null, null,
+                content, commentPublic);
+    }
 }
