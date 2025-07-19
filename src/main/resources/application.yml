@@ -2,12 +2,15 @@ spring:
   application:
     name: backend-service
   profiles:
-    active: prod
+    active: dev
   servlet:
     multipart:
       max-file-size: 10MB
       max-request-size: 10MB
-
+  data:
+    web:
+      pageable:
+        one-indexed-parameters: true
 
 server:
   port: 9003
