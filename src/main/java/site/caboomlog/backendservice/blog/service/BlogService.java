@@ -1,6 +1,8 @@
 package site.caboomlog.backendservice.blog.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -18,6 +20,8 @@ import site.caboomlog.backendservice.blogmember.entity.BlogMemberMapping;
 import site.caboomlog.backendservice.blogmember.repository.BlogMemberMappingRepository;
 import site.caboomlog.backendservice.category.entity.Category;
 import site.caboomlog.backendservice.category.repository.CategoryRepository;
+import site.caboomlog.backendservice.common.adaptor.SearchServiceAdaptor;
+import site.caboomlog.backendservice.common.dto.BlogRequest;
 import site.caboomlog.backendservice.common.exception.BadRequestException;
 import site.caboomlog.backendservice.common.exception.UnauthenticatedException;
 import site.caboomlog.backendservice.common.image.dto.ImageDto;
@@ -32,6 +36,7 @@ import site.caboomlog.backendservice.role.repository.RoleRepository;
 import java.util.List;
 import java.util.Optional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class BlogService {
@@ -43,6 +48,7 @@ public class BlogService {
     private final CategoryRepository categoryRepository;
 
     private final ImageUploadService imageUploadService;
+    private final SearchServiceAdaptor searchServiceAdaptor;
 
     /**
      * 블로그 FID를 기준으로 블로그 정보를 조회하여 응답 DTO로 반환합니다.
@@ -120,6 +126,16 @@ public class BlogService {
         Category category = Category.ofNewCategory(newBlog, null, null, "카테고리 없음",
                 true, 0, 0);
         categoryRepository.save(category);
+
+        if (request.isBlogPublic()) {
+            BlogRequest searchServiceBlogRequest = new BlogRequest(request.getBlogFid(),
+                    request.getBlogName(), null, request.getBlogDesc(), request.getBlogType());
+            ResponseEntity<String> response = searchServiceAdaptor.createBlog(searchServiceBlogRequest);
+            if (!response.getStatusCode().is2xxSuccessful()) {
+                log.info(String.format("createBlog() - [blogFid:%s] search-service에 등록 중 오류 발생 - %s",
+                        request.getBlogFid(), response.getBody()));
+            }
+        }
     }
 
     /**
@@ -141,8 +157,25 @@ public class BlogService {
             throw new BlogNotFoundException(String.format("블로그가 존재하지 않습니다. blogFid: %s", blogFid));
         }
         Blog blog = optionalBlog.get();
+        boolean blogPublicOld = blog.getBlogPublic();
         blog.modifyBlogInfo(request.getBlogName(), request.getBlogDesc(), request.isBlogPublic());
         blogRepository.save(blog);
+
+        if (request.isBlogPublic()) {
+            BlogRequest searchServiceBlogRequest = new BlogRequest(blog.getBlogFid(),
+                    request.getBlogName(), null, request.getBlogDesc(), blog.getBlogType().name());
+            ResponseEntity<String> response = searchServiceAdaptor.createBlog(searchServiceBlogRequest);
+            if (!response.getStatusCode().is2xxSuccessful()) {
+                log.info(String.format("modifyBlogInfo() - [blogFid:%s] search-service에 등록 중 오류 발생 - %s",
+                        blogFid, response.getBody()));
+            }
+        } else if (blogPublicOld) { // 공개 -> 비공개로 바뀐 경우
+            ResponseEntity<String> response = searchServiceAdaptor.deleteBlog(blog.getBlogFid());
+            if (!response.getStatusCode().is2xxSuccessful()) {
+                log.info(String.format("modifyBlogInfo() - [blogFid:%s] search-service에서 삭제 중 오류 발생 - %s",
+                        blogFid, response.getBody()));
+            }
+        }
     }
 
     /**
@@ -291,6 +324,17 @@ public class BlogService {
             ImageDto imageDto = imageUploadService.uploadBlogMainImage(blogFid, file);
             String newMainImg = imageDto.getUrl();
             blog.setBlogMainImg(newMainImg);
+
+            if (blog.getBlogPublic()) {
+                BlogRequest searchServiceBlogRequest = new BlogRequest(blog.getBlogFid(),
+                        blog.getBlogName(), newMainImg, blog.getBlogDescription(), blog.getBlogType().name());
+                ResponseEntity<String> response = searchServiceAdaptor.createBlog(searchServiceBlogRequest);
+                if (!response.getStatusCode().is2xxSuccessful()) {
+                    log.info(String.format("changeMainImg() - [blogFid:%s] search-service에 등록 중 오류 발생 - %s",
+                            blogFid, response.getBody()));
+                }
+            }
+
             return newMainImg;
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -320,6 +364,15 @@ public class BlogService {
         try {
             imageUploadService.deleteFile(oldMainImg);
             blog.setBlogMainImg(null);
+            if (blog.getBlogPublic()) {
+                BlogRequest searchServiceBlogRequest = new BlogRequest(blog.getBlogFid(),
+                        blog.getBlogName(), null, blog.getBlogDescription(), blog.getBlogType().name());
+                ResponseEntity<String> response = searchServiceAdaptor.createBlog(searchServiceBlogRequest);
+                if (!response.getStatusCode().is2xxSuccessful()) {
+                    log.info(String.format("deleteMainImg() - [blogFid:%s] search-service에 등록 중 오류 발생 - %s",
+                            blogFid, response.getBody()));
+                }
+            }
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
