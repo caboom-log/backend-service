@@ -1,6 +1,8 @@
 package site.caboomlog.backendservice.post.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import site.caboomlog.backendservice.blogmember.entity.BlogMemberMapping;
@@ -8,6 +10,8 @@ import site.caboomlog.backendservice.blogmember.repository.BlogMemberMappingRepo
 import site.caboomlog.backendservice.category.entity.Category;
 import site.caboomlog.backendservice.category.exception.CategoryNotFoundException;
 import site.caboomlog.backendservice.category.repository.CategoryRepository;
+import site.caboomlog.backendservice.common.adaptor.SearchServiceAdaptor;
+import site.caboomlog.backendservice.common.dto.PostRequest;
 import site.caboomlog.backendservice.common.exception.BadRequestException;
 import site.caboomlog.backendservice.common.exception.DatabaseException;
 import site.caboomlog.backendservice.common.exception.UnauthenticatedException;
@@ -25,9 +29,11 @@ import site.caboomlog.backendservice.post.exception.PostNotFoundException;
 import site.caboomlog.backendservice.post.repository.PostCategoryMappingRepository;
 import site.caboomlog.backendservice.post.repository.PostRepository;
 import site.caboomlog.backendservice.post.repository.PostRepositoryImpl;
+import site.caboomlog.backendservice.topic.entity.Topic;
 
-import java.util.List;
+import java.util.*;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class BlogPostService {
@@ -39,6 +45,7 @@ public class BlogPostService {
     private final ImageRepository imageRepository;
     private final PostImageMappingRepository postImageMappingRepository;
     private final MinioService minioService;
+    private final SearchServiceAdaptor searchServiceAdaptor;
 
     /**
      * 게시글을 생성합니다.
@@ -102,6 +109,25 @@ public class BlogPostService {
             );
             imageRepository.save(image);
             postImageMappingRepository.save(postImageMapping);
+        }
+
+        if (post.isPostPublic()) {
+            Set<String> topics = new HashSet<>();
+            for (Long categoryId : request.getCategoryIds()) {
+                Optional<Category> topicAndCategory = categoryRepository.findTopicAndCategoryByCategoryId(categoryId);
+                Topic topic = topicAndCategory.get().getTopic();
+                topics.add(topic.getTopicName());
+                while (topic.getParentTopic() != null) {
+                    topics.add(topic.getParentTopic().getTopicName());
+                    topic = topic.getParentTopic();
+                }
+            }
+
+            PostRequest postRequest = new PostRequest(post.getPostId(), blogFid, post.getPostTitle(),
+                    post.getPostContent(), post.getCreatedAt(), topics.stream().toList());
+            ResponseEntity<String> response = searchServiceAdaptor.createPost(postRequest);
+            log.info(String.format("createPost() - [postId:%d] search-service에 등록 중 오류 발생 - %s",
+                    post.getPostId(), response.getBody()));
         }
         return savedPost.getPostId();
     }

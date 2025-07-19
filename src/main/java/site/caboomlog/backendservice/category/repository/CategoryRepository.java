@@ -21,6 +21,9 @@ public interface CategoryRepository extends JpaRepository<Category, Long> {
     @Query("SELECT c FROM Category c JOIN FETCH c.blog WHERE c.categoryId = ?1")
     Optional<Category> findByCategoryId(long categoryId);
 
+    @Query("SELECT c FROM Category c JOIN FETCH c.topic WHERE c.categoryId = ?1")
+    Optional<Category> findTopicAndCategoryByCategoryId(long categoryId);
+
     Optional<Category> findByBlog_BlogFidAndAndCategoryName(String blogFid, String categoryName);
 
 }
