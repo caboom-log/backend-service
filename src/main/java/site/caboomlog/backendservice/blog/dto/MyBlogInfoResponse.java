@@ -8,5 +8,6 @@ import lombok.Getter;
 public class MyBlogInfoResponse {
     private String blogFid;
     private String blogName;
+    private String mbNickname;
     private String blogType;
 }

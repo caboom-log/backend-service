@@ -257,7 +257,8 @@ public class BlogService {
                 .findAllByMember_MbNoAndRole_RoleId(mbNo, "ROLE_OWNER")
                 .stream()
                 .map(info -> new MyBlogInfoResponse(
-                        info.getBlog().getBlogFid(), info.getBlog().getBlogName(), info.getBlog().getBlogType().name()))
+                        info.getBlog().getBlogFid(), info.getBlog().getBlogName(), info.getMbNickname(),
+                        info.getBlog().getBlogType().name()))
                 .toList();
     }
 

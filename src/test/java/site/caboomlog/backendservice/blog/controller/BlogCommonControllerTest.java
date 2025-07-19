@@ -539,8 +539,8 @@ class BlogCommonControllerTest {
         // given
         Mockito.when(memberRepository.findByMbUuid(anyString())).thenReturn(testMember);
         List<MyBlogInfoResponse> response = List.of(
-                new MyBlogInfoResponse("test-fid-1", "test-name-1", "team"),
-                new MyBlogInfoResponse("test-fid-2", "test-name-2", "personal")
+                new MyBlogInfoResponse("test-fid-1", "test-name-1", "닉네임1", "team"),
+                new MyBlogInfoResponse("test-fid-2", "test-name-2", "닉네임2", "personal")
         );
         Mockito.when(blogService.getMyBlogInfo(anyLong())).thenReturn(response);
 

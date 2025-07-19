@@ -35,4 +35,12 @@ public class Role {
     public static Role ofNewRole(String roleId, String roleName, String roleDescription) {
         return new Role(roleId, roleName, roleDescription);
     }
+
+    public boolean isValidRole() {
+        return isValidRole(this.getRoleId());
+    }
+
+    public static boolean isValidRole(String roleId) {
+        return "ROLE_MEMBER".equals(roleId) || "ROLE_OWNER".equals(roleId);
+    }
 }
