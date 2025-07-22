@@ -115,16 +115,18 @@ public class BlogPostService {
             Set<String> topics = new HashSet<>();
             for (Long categoryId : request.getCategoryIds()) {
                 Optional<Category> topicAndCategory = categoryRepository.findTopicAndCategoryByCategoryId(categoryId);
-                Topic topic = topicAndCategory.get().getTopic();
-                topics.add(topic.getTopicName());
-                while (topic.getParentTopic() != null) {
-                    topics.add(topic.getParentTopic().getTopicName());
-                    topic = topic.getParentTopic();
+                if (topicAndCategory.isPresent()) {
+                    Topic topic = topicAndCategory.get().getTopic();
+                    topics.add(topic.getTopicName());
+                    while (topic.getParentTopic() != null) {
+                        topics.add(topic.getParentTopic().getTopicName());
+                        topic = topic.getParentTopic();
+                    }
                 }
             }
 
-            PostRequest postRequest = new PostRequest(post.getPostId(), blogFid, post.getPostTitle(),
-                    post.getPostContent(), post.getCreatedAt(), topics.stream().toList());
+            PostRequest postRequest = new PostRequest(savedPost.getPostId(), blogFid, post.getPostTitle(),
+                    post.getPostContent(), post.getThumbnail(), post.getCreatedAt(), topics.stream().toList());
             ResponseEntity<String> response = searchServiceAdaptor.createPost(postRequest);
             log.info(String.format("createPost() - [postId:%d] search-service에 등록 중 오류 발생 - %s",
                     post.getPostId(), response.getBody()));

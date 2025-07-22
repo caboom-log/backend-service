@@ -64,15 +64,29 @@ public class PublicPostService {
         Map<Long, PostResponse> postMap = new LinkedHashMap<>();
 
         for (PostFlatProjection p : postFlatProjections) {
-            postMap.computeIfAbsent(p.postId(), postId -> {
-                TeamBlogMemberResponse writer = new TeamBlogMemberResponse(
-                        p.mbUuid(), p.mbNickname(), p.mainBlogFid()
+            PostResponse existing = postMap.get(p.postId());
+            if (existing == null) {
+                PostResponse response = new PostResponse(
+                        p.postId(),
+                        p.blogFid(),
+                        p.title(),
+                        p.summary(),
+                        p.thumbnail(),
+                        p.createdAt(),
+                        p.viewCount(),
+                        new ArrayList<>()
                 );
-
-                return new PostResponse(p.postId(), p.blogFid(), p.title(), writer, p.summary(),
-                        p.thumbnail(), p.createdAt(), p.updatedAt(), p.viewCount(), new ArrayList<>());
-            }).getCategoryNames().add(p.categoryName());
+                if (p.topicName() != null) {
+                    response.getTopics().add(p.topicName());
+                }
+                postMap.put(p.postId(), response);
+            } else {
+                if (p.topicName() != null && !existing.getTopics().contains(p.topicName())) {
+                    existing.getTopics().add(p.topicName());
+                }
+            }
         }
         return new ArrayList<>(postMap.values());
     }
+
 }

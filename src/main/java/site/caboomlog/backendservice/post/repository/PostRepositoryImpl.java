@@ -17,6 +17,7 @@ import site.caboomlog.backendservice.post.dto.PostDetailResponse;
 import site.caboomlog.backendservice.post.dto.PostFlatProjection;
 import site.caboomlog.backendservice.post.entity.QPost;
 import site.caboomlog.backendservice.post.entity.QPostCategoryMapping;
+import site.caboomlog.backendservice.topic.entity.QTopic;
 
 import java.util.List;
 import java.util.Objects;
@@ -43,10 +44,7 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
         QBlogMemberMapping mapping = QBlogMemberMapping.blogMemberMapping;
         QPostCategoryMapping pcm = QPostCategoryMapping.postCategoryMapping;
         QCategory category = QCategory.category;
-
-        QBlog writerMainBlog = new QBlog("writerMainBlog");
-        QBlogMemberMapping writerMapping = new QBlogMemberMapping("writerMapping");
-        JPQLQuery<String> mainBlogFidSub = getMainBlogFidSubquery(writerMainBlog, writerMapping, member);
+        QTopic topic = QTopic.topic;
 
         BooleanBuilder whereClause = new BooleanBuilder(post.postPublic.isTrue());
         blogFid.ifPresent(fid -> whereClause.and(blog.blogFid.eq(fid)));
@@ -56,18 +54,14 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
                         post.postId,
                         blog.blogFid,
                         post.postTitle,
-                        member.mbUuid,
-                        mapping.mbNickname,
-                        mainBlogFidSub,
                         new CaseBuilder()
                                 .when(post.postContent.length().gt(50))
                                 .then(post.postContent.substring(0, 50).concat(" ... "))
                                 .otherwise(post.postContent),
                         post.thumbnail,
                         post.createdAt,
-                        post.updatedAt,
                         post.viewCount,
-                        category.categoryName
+                        topic.topicName
                 ))
                 .from(post)
                     .join(post.blog, blog)
@@ -75,6 +69,7 @@ public class PostRepositoryImpl implements PostRepositoryCustom {
                     .join(mapping).on(mapping.blog.eq(blog).and(mapping.member.eq(member)))
                     .leftJoin(pcm).on(pcm.post.eq(post))
                     .leftJoin(pcm.category, category)
+                    .leftJoin(category.topic, topic)
                 .where(whereClause)
                 .orderBy(post.createdAt.desc())
                 .offset(offset)

@@ -14,13 +14,10 @@ public class PostResponse {
     private Long postId;
     private String blogFid;
     private String title;
-    private TeamBlogMemberResponse writer;
     private String summary;
     private String thumbnail;
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm")
     private LocalDateTime createdAt;
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm")
-    private LocalDateTime updatedAt;
     private Long viewCount;
-    private List<String> categoryNames;
+    private List<String> topics;
 }

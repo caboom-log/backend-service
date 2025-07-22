@@ -1,5 +1,6 @@
 package site.caboomlog.backendservice.common.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -13,9 +14,12 @@ public class PostRequest {
 
     private String blogFid;
 
+    @JsonProperty("title")
     private String postTitle;
 
     private String postContent;
+
+    private String thumbnail;
 
     private LocalDateTime createdAt;
 

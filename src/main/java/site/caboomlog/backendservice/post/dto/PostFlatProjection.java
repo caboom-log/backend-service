@@ -6,14 +6,10 @@ public record PostFlatProjection(
         Long postId,
         String blogFid,
         String title,
-        String mbUuid,
-        String mbNickname,
-        String mainBlogFid,
         String summary,
         String thumbnail,
         LocalDateTime createdAt,
-        LocalDateTime updatedAt,
         Long viewCount,
-        String categoryName
+        String topicName
 ) {
 }

@@ -18,9 +18,9 @@ public interface SearchServiceAdaptor {
     @DeleteMapping("/blogs/{blogFid}")
     ResponseEntity<String> deleteBlog(@PathVariable("blogFid") String blogFid);
 
-    @PostMapping("/posts")
+    @PostMapping("/api/posts")
     ResponseEntity<String> createPost(@RequestBody PostRequest postRequest);
 
-    @DeleteMapping("/posts/{postId}")
+    @DeleteMapping("/api/posts/{postId}")
     ResponseEntity<String> deletePost(@PathVariable("postId") Long postId);
 }
